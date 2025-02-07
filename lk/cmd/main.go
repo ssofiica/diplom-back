@@ -3,6 +3,9 @@ package main
 import (
 	"back/infra/postgres"
 	"back/lk/config"
+	"back/lk/internal/delivery"
+	"back/lk/internal/repo"
+	"back/lk/internal/usecase"
 	"context"
 	"fmt"
 	"log"
@@ -26,17 +29,24 @@ func main() {
 	db := postgres.Init(os.Getenv("PG_CONN"))
 	defer db.Close()
 
+	menuRepo := repo.NewMenu(db)
+	menuUsecase := usecase.NewMenu(menuRepo)
+	menuHandler := delivery.NewMenuHandler(menuUsecase)
+
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//logger.Error("query to path: " + r.URL.String())
+		fmt.Println("query to path: " + r.URL.String())
 		w.WriteHeader(http.StatusNotFound)
 	})
 	//r.Use() //тут мидлвары вставить надо аргументами
-	// menu := r.PathPrefix("/menu").Subrouter()
-	// {
-	// 	menu.Handle("/food/add", http.HandlerFunc( /**/ )).Methods(http.MethodPost, http.MethodOptions)
-	// }
+	menu := r.PathPrefix("/menu").Subrouter()
+	{
+		menu.HandleFunc("/food/add", menuHandler.AddFood).Methods(http.MethodPost, http.MethodOptions)
+		menu.HandleFunc("/food/{id}", menuHandler.DeleteFood).Methods(http.MethodDelete, http.MethodOptions)
+		menu.HandleFunc("/category/add", menuHandler.AddCategory).Methods(http.MethodPost, http.MethodOptions)
+		menu.HandleFunc("/category/{id}", menuHandler.DeleteCategory).Methods(http.MethodDelete, http.MethodOptions)
+	}
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
