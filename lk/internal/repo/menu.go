@@ -12,6 +12,8 @@ type MenuInterface interface {
 	DeleteFood(ctx context.Context, id uint64) error
 	AddCategory(ctx context.Context, category entity.Category) (entity.Category, error)
 	DeleteCategory(ctx context.Context, id uint64) error
+	GetCategories(ctx context.Context, restId uint64) (entity.CategoryList, error)
+	GetFoodForCategory(ctx context.Context, categoryId uint64, status string) (entity.FoodList, error)
 }
 
 type Menu struct {
@@ -20,6 +22,42 @@ type Menu struct {
 
 func NewMenu(db *pgxpool.Pool) MenuInterface {
 	return &Menu{db: db}
+}
+
+func (m *Menu) GetCategories(ctx context.Context, restId uint64) (entity.CategoryList, error) {
+	query := `select id, name from category where restaurant_id=$1`
+	var res entity.CategoryList
+	rows, err := m.db.Query(ctx, query, restId)
+	if err != nil {
+		return entity.CategoryList{}, err
+	}
+	for rows.Next() {
+		var c entity.Category
+		err := rows.Scan(&c.ID, &c.Name)
+		if err != nil {
+			return entity.CategoryList{}, err
+		}
+		res = append(res, c)
+	}
+	return res, nil
+}
+
+func (m *Menu) GetFoodForCategory(ctx context.Context, categoryId uint64, status string) (entity.FoodList, error) {
+	query := `select id, name, weight, price, img_url, status from food where category_id=$1 and status=$2;`
+	var res entity.FoodList
+	rows, err := m.db.Query(ctx, query, categoryId, status)
+	if err != nil {
+		return entity.FoodList{}, err
+	}
+	for rows.Next() {
+		var f entity.Food
+		err := rows.Scan(&f.ID, &f.Name, &f.Weight, &f.Price, &f.Img, &f.Status)
+		if err != nil {
+			return entity.FoodList{}, err
+		}
+		res = append(res, f)
+	}
+	return res, nil
 }
 
 func (m *Menu) AddFood(ctx context.Context, food entity.Food) (entity.Food, error) {

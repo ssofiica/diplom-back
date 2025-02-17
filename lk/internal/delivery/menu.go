@@ -22,6 +22,49 @@ func NewMenuHandler(u usecase.MenuInterface) *MenuHandler {
 	return &MenuHandler{usecase: u}
 }
 
+func (h *MenuHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
+	restId := uint64(1)
+	res, err := h.usecase.GetMenu(context.Background(), restId)
+	if err != nil {
+		response.WithError(w, 500, "GetMenu", err)
+		return
+	}
+	resDTO := make([]entity.CategoryDTO, len(res))
+	for i, c := range res {
+		resDTO[i] = c.ToDTO()
+	}
+	response.WriteData(w, resDTO, 200)
+}
+
+// еда по статусу для определенной категории
+func (h *MenuHandler) GetFoodByStatus(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	var val1 string = params.Get("status")
+	var status entity.FoodStatus
+	status.Scan(val1)
+
+	vars := mux.Vars(r)
+	val2 := vars["category_id"]
+	if val2 == "" {
+		fmt.Println("no id")
+		response.WithError(w, 400, "GetFoodByStatus", errors.New("missing request var"))
+		return
+	}
+	id, err := strconv.Atoi(val2)
+	if err != nil {
+		fmt.Println("err in converting str to int")
+		response.WithError(w, 400, "GetFoodByStatus", err)
+		return
+	}
+
+	res, err := h.usecase.GetFoodByStatus(context.Background(), status, uint64(id))
+	if err != nil {
+		response.WithError(w, 500, "GetFoodByStatus", err)
+		return
+	}
+	response.WriteData(w, res.ToDTO(), 200)
+}
+
 func (h *MenuHandler) AddFood(w http.ResponseWriter, r *http.Request) {
 	payload := entity.FoodDTO{}
 	if err := request.GetRequestData(r, &payload); err != nil {
@@ -33,7 +76,7 @@ func (h *MenuHandler) AddFood(w http.ResponseWriter, r *http.Request) {
 		response.WithError(w, 500, "AddFood", err)
 		return
 	}
-	response.WriteData(w, res, 200)
+	response.WriteData(w, res.ToDTO(), 200)
 }
 
 func (h *MenuHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
