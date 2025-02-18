@@ -14,6 +14,9 @@ func WithError(w http.ResponseWriter, statusCode int, handlerName string, err er
 }
 
 func WriteData(w http.ResponseWriter, data interface{}, statusCode int) {
+	if data == nil {
+		data = "Успешный ответ"
+	}
 	body, err := json.Marshal(data)
 	if err != nil {
 		WithError(w, 500, "", err)

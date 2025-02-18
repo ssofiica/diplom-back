@@ -7,10 +7,14 @@ import (
 )
 
 type MenuInterface interface {
+	GetMenu(ctx context.Context, restId uint64) (entity.CategoryList, error)
+	GetFoodByStatus(ctx context.Context, status entity.FoodStatus, categoryId uint64) (entity.FoodList, error)
 	AddFood(ctx context.Context, food entity.Food) (entity.Food, error)
 	DeleteFood(ctx context.Context, id uint64) error
 	AddCategory(ctx context.Context, category entity.Category) (entity.Category, error)
 	DeleteCategory(ctx context.Context, id uint64) error
+	EditFood(ctx context.Context, id uint32, params entity.EditFood) (entity.Food, error)
+	ChangeStatus(ctx context.Context, id uint32, status string) error
 }
 
 type Menu struct {
@@ -19,6 +23,27 @@ type Menu struct {
 
 func NewMenu(r repo.MenuInterface) MenuInterface {
 	return &Menu{repo: r}
+}
+
+func (m *Menu) GetMenu(ctx context.Context, restId uint64) (entity.CategoryList, error) {
+	// получаю список категорий
+	categories, err := m.repo.GetCategories(ctx, restId)
+	if err != nil {
+		return categories, err
+	}
+	for i, c := range categories {
+		// для каждой категории получаю ее блюда
+		food, err := m.repo.GetFoodForCategory(ctx, c.ID, "in")
+		if err != nil {
+			return entity.CategoryList{}, err
+		}
+		categories[i].Items = food
+	}
+	return categories, nil
+}
+
+func (m *Menu) GetFoodByStatus(ctx context.Context, status entity.FoodStatus, categoryId uint64) (entity.FoodList, error) {
+	return m.repo.GetFoodForCategory(ctx, categoryId, string(status))
 }
 
 func (m *Menu) AddFood(ctx context.Context, food entity.Food) (entity.Food, error) {
@@ -43,4 +68,12 @@ func (m *Menu) AddCategory(ctx context.Context, category entity.Category) (entit
 
 func (m *Menu) DeleteCategory(ctx context.Context, id uint64) error {
 	return m.repo.DeleteCategory(ctx, id)
+}
+
+func (m *Menu) EditFood(ctx context.Context, id uint32, params entity.EditFood) (entity.Food, error) {
+	return m.repo.EditFood(ctx, id, params)
+}
+
+func (m *Menu) ChangeStatus(ctx context.Context, id uint32, status string) error {
+	return m.repo.ChangeStatus(ctx, id, status)
 }

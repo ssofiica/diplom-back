@@ -8,16 +8,39 @@ var (
 	FoodStatusDelete FoodStatus = "delete"
 )
 
+func IsFoodStatus(status string) bool {
+	return status == "stop" || status == "in" || status == "delete"
+}
+
+func (f *FoodStatus) Scan(str string) {
+	switch str {
+	case "stop":
+		*f = FoodStatusStop
+	case "in", "":
+		*f = FoodStatusIn
+	case "delete":
+		*f = FoodStatusDelete
+	default:
+		*f = FoodStatusStop
+	}
+}
+
+type ChangeStatusRequest struct {
+	Status string `json:"status"`
+}
+
 type Category struct {
 	ID           uint64
 	Name         string
 	RestaurantID uint64
+	Items        FoodList
 }
 
 type CategoryDTO struct {
-	ID           uint64 `json:"id"`
-	Name         string `json:"name"`
-	RestaurantID uint64 `json:"restaurant_id"`
+	ID           uint64    `json:"id"`
+	Name         string    `json:"name"`
+	RestaurantID uint64    `json:"restaurant_id,omitempty"`
+	Items        []FoodDTO `json:"items"`
 }
 
 func (dto *CategoryDTO) ToCategory() Category {
@@ -25,6 +48,15 @@ func (dto *CategoryDTO) ToCategory() Category {
 		ID:           dto.ID,
 		Name:         dto.Name,
 		RestaurantID: dto.RestaurantID,
+	}
+}
+
+func (c *Category) ToDTO() CategoryDTO {
+	return CategoryDTO{
+		ID:           c.ID,
+		Name:         c.Name,
+		RestaurantID: c.RestaurantID,
+		Items:        c.Items.ToDTO(),
 	}
 }
 
@@ -46,21 +78,18 @@ type FoodDTO struct {
 	Weight       uint16 `json:"weight"`
 	Img          string `json:"img_url"`
 	Status       string `json:"status"`
-	CategoryID   uint64 `json:"category_id"`
-	RestaurantID uint64 `json:"restaurant_id"`
+	CategoryID   uint64 `json:"category_id,omitempty"`
+	RestaurantID uint64 `json:"restaurant_id,omitempty"`
 }
 
-func (f *FoodStatus) Scan(str string) {
-	switch str {
-	case "stop":
-		*f = FoodStatusStop
-	case "in":
-		*f = FoodStatusIn
-	case "delete":
-		*f = FoodStatusDelete
-	default:
-		*f = FoodStatusStop
-	}
+type EditFood struct {
+	ID         uint32 `json:"id"`
+	Name       string `json:"name"`
+	Price      uint16 `json:"price"`
+	Weight     uint16 `json:"weight"`
+	Img        string `json:"img_url"`
+	Status     string `json:"status"`
+	CategoryID uint64 `json:"category_id,omitempty"`
 }
 
 func (dto *FoodDTO) ToFood() Food {
@@ -78,5 +107,26 @@ func (dto *FoodDTO) ToFood() Food {
 	}
 }
 
+func (food *Food) ToDTO() FoodDTO {
+	return FoodDTO{
+		ID:           food.ID,
+		Name:         food.Name,
+		Price:        food.Price,
+		Weight:       food.Weight,
+		Img:          food.Img,
+		Status:       string(food.Status),
+		CategoryID:   food.CategoryID,
+		RestaurantID: food.RestaurantID,
+	}
+}
+
 type FoodList []Food
 type CategoryList []Category
+
+func (list *FoodList) ToDTO() []FoodDTO {
+	res := make([]FoodDTO, len(*list))
+	for i, food := range *list {
+		res[i] = food.ToDTO()
+	}
+	return res
+}
