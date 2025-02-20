@@ -13,6 +13,8 @@ type MenuInterface interface {
 	DeleteFood(ctx context.Context, id uint64) error
 	AddCategory(ctx context.Context, category entity.Category) (entity.Category, error)
 	DeleteCategory(ctx context.Context, id uint64) error
+	EditFood(ctx context.Context, id uint32, params entity.EditFood) (entity.Food, error)
+	ChangeStatus(ctx context.Context, id uint32, status string) error
 }
 
 type Menu struct {
@@ -66,4 +68,12 @@ func (m *Menu) AddCategory(ctx context.Context, category entity.Category) (entit
 
 func (m *Menu) DeleteCategory(ctx context.Context, id uint64) error {
 	return m.repo.DeleteCategory(ctx, id)
+}
+
+func (m *Menu) EditFood(ctx context.Context, id uint32, params entity.EditFood) (entity.Food, error) {
+	return m.repo.EditFood(ctx, id, params)
+}
+
+func (m *Menu) ChangeStatus(ctx context.Context, id uint32, status string) error {
+	return m.repo.ChangeStatus(ctx, id, status)
 }

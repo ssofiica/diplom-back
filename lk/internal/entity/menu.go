@@ -8,6 +8,10 @@ var (
 	FoodStatusDelete FoodStatus = "delete"
 )
 
+func IsFoodStatus(status string) bool {
+	return status == "stop" || status == "in" || status == "delete"
+}
+
 func (f *FoodStatus) Scan(str string) {
 	switch str {
 	case "stop":

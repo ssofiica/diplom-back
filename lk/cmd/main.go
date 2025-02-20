@@ -46,6 +46,8 @@ func main() {
 		menu.HandleFunc("/{category_id}", menuHandler.GetFoodByStatus).Methods(http.MethodGet, http.MethodOptions)
 		menu.HandleFunc("/food/add", menuHandler.AddFood).Methods(http.MethodPost, http.MethodOptions)
 		menu.HandleFunc("/food/{id}", menuHandler.DeleteFood).Methods(http.MethodDelete, http.MethodOptions)
+		menu.HandleFunc("/food/{id}/change", menuHandler.EditFood).Methods(http.MethodPut, http.MethodOptions)
+		menu.HandleFunc("/food/{id}/status", menuHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
 		menu.HandleFunc("/category/add", menuHandler.AddCategory).Methods(http.MethodPost, http.MethodOptions)
 		menu.HandleFunc("/category/{id}", menuHandler.DeleteCategory).Methods(http.MethodDelete, http.MethodOptions)
 	}
