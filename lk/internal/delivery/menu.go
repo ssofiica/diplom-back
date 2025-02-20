@@ -56,6 +56,7 @@ func (h *MenuHandler) GetFoodByStatus(w http.ResponseWriter, r *http.Request) {
 		response.WithError(w, 400, "GetFoodByStatus", err)
 		return
 	}
+
 	res, err := h.usecase.GetFoodByStatus(context.Background(), status, uint64(id))
 	if err != nil {
 		response.WithError(w, 500, "GetFoodByStatus", err)
