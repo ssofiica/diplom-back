@@ -33,6 +33,10 @@ func main() {
 	menuUsecase := usecase.NewMenu(menuRepo)
 	menuHandler := delivery.NewMenuHandler(menuUsecase)
 
+	infoRepo := repo.NewRest(db)
+	infoUsecase := usecase.NewRest(infoRepo)
+	infoHandler := delivery.NewRestHandler(infoUsecase)
+
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +54,11 @@ func main() {
 		menu.HandleFunc("/food/{id}/status", menuHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
 		menu.HandleFunc("/category/add", menuHandler.AddCategory).Methods(http.MethodPost, http.MethodOptions)
 		menu.HandleFunc("/category/{id}", menuHandler.DeleteCategory).Methods(http.MethodDelete, http.MethodOptions)
+	}
+
+	info := r.PathPrefix("/info").Subrouter()
+	{
+		info.HandleFunc("", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
 	}
 
 	srv := &http.Server{
