@@ -128,10 +128,12 @@ func main() {
 	})
 	//r.Use() //тут мидлвары вставить надо аргументами
 
-	info := r.PathPrefix("/info").Subrouter()
-	{
-		info.HandleFunc("", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
-	}
+	r.HandleFunc("/info", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/menu", infoHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)
+	// order := r.PathPrefix("/order").Subrouter()
+	// {
+	// 	order.HandleFunc("", orderHandler.GetOrder).Methods(http.MethodGet, http.MethodOptions)
+	// }
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", cfg.Server.Host, os.Getenv("SERVER_PORT")),
