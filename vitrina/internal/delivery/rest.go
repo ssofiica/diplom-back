@@ -1,7 +1,7 @@
 package delivery
 
 import (
-	"back/vitrina/entity"
+	"back/vitrina/internal/entity"
 	"back/vitrina/internal/usecase"
 	"back/vitrina/utils/response"
 
