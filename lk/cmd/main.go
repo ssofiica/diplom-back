@@ -4,6 +4,7 @@ import (
 	"back/infra/postgres"
 	"back/lk/config"
 	"back/lk/internal/delivery"
+	"back/lk/internal/middleware"
 	"back/lk/internal/repo"
 	"back/lk/internal/usecase"
 	"context"
@@ -38,12 +39,12 @@ func main() {
 	infoHandler := delivery.NewRestHandler(infoUsecase)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+	r.Use(middleware.CorsMiddleware)
 
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("query to path: " + r.URL.String())
 		w.WriteHeader(http.StatusNotFound)
 	})
-	//r.Use() //тут мидлвары вставить надо аргументами
 	menu := r.PathPrefix("/menu").Subrouter()
 	{
 		menu.HandleFunc("", menuHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)

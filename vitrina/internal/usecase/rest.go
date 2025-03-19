@@ -1,8 +1,9 @@
 package usecase
 
 import (
-	"back/vitrina/entity"
+	"back/vitrina/internal/entity"
 	"back/vitrina/internal/repo"
+
 	"context"
 )
 

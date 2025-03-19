@@ -1,5 +1,12 @@
 package entity
 
+type FoodStatus string
+
+var (
+	FoodStatusStop FoodStatus = "stop"
+	FoodStatusIn   FoodStatus = "in"
+)
+
 type Category struct {
 	ID           uint64
 	Name         string
@@ -71,7 +78,11 @@ type FoodList []Food
 type CategoryList []Category
 
 func (list *FoodList) ToDTO() []FoodDTO {
-	res := make([]FoodDTO, len(*list))
+	length := len(*list)
+	if length == 0 {
+		return []FoodDTO{}
+	}
+	res := make([]FoodDTO, length)
 	for i, food := range *list {
 		res[i] = food.ToDTO()
 	}

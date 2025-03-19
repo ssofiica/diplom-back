@@ -120,6 +120,11 @@ func main() {
 	infoUsecase := usecase.NewRest(infoRepo)
 	infoHandler := delivery.NewRestHandler(infoUsecase)
 
+	foodRepo := repo.NewFood(db)
+	orderRepo := repo.NewOrder(db)
+	orderUsecase := usecase.NewOrder(orderRepo, foodRepo)
+	orderHandler := delivery.NewOrderHandler(orderUsecase)
+
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 
 	r.HandleFunc("/ok", func(w http.ResponseWriter, r *http.Request) {
@@ -130,10 +135,11 @@ func main() {
 
 	r.HandleFunc("/info", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/menu", infoHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)
-	// order := r.PathPrefix("/order").Subrouter()
-	// {
-	// 	order.HandleFunc("", orderHandler.GetOrder).Methods(http.MethodGet, http.MethodOptions)
-	// }
+	order := r.PathPrefix("/order").Subrouter()
+	{
+		order.HandleFunc("/food", orderHandler.AddFoodToOrder).Methods(http.MethodPost, http.MethodOptions)
+		order.HandleFunc("/basket", orderHandler.GetUserBasket).Methods(http.MethodGet, http.MethodOptions)
+	}
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", cfg.Server.Host, os.Getenv("SERVER_PORT")),

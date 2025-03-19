@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"back/vitrina/entity"
+	"back/vitrina/internal/entity"
 	"context"
 
 	//"github.com/jackc/pgx/v5"
