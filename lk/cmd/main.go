@@ -1,6 +1,7 @@
 package main
 
 import (
+	"back/infra/minio"
 	"back/infra/postgres"
 	"back/lk/config"
 	"back/lk/internal/delivery"
@@ -30,12 +31,23 @@ func main() {
 	db := postgres.Init(os.Getenv("PG_CONN"))
 	defer db.Close()
 
+	minioClient, err := minio.NewMinioClient(
+		os.Getenv("MINIO_ENDPOINT"),
+		os.Getenv("MINIO_ROOT_USER"),
+		os.Getenv("MINIO_ROOT_PASSWORD"),
+		os.Getenv("MINIO_BUCKET_NAME"),
+	)
+	if err != nil {
+		log.Fatalf("Error initializing MinIO: %v", err)
+	}
+
 	menuRepo := repo.NewMenu(db)
 	menuUsecase := usecase.NewMenu(menuRepo)
 	menuHandler := delivery.NewMenuHandler(menuUsecase)
+	minio := repo.NewMinio(minioClient)
 
 	infoRepo := repo.NewRest(db)
-	infoUsecase := usecase.NewRest(infoRepo)
+	infoUsecase := usecase.NewRest(infoRepo, minio)
 	infoHandler := delivery.NewRestHandler(infoUsecase)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
@@ -60,10 +72,11 @@ func main() {
 	info := r.PathPrefix("/info").Subrouter()
 	{
 		info.HandleFunc("", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
+		info.HandleFunc("/upload-logo", infoHandler.UploadImage).Methods(http.MethodPost, http.MethodOptions)
 	}
 
 	srv := &http.Server{
-		Addr:              fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
+		Addr:              fmt.Sprintf("%s:%s", os.Getenv("HOST"), cfg.Server.Port),
 		Handler:           r,
 		ReadTimeout:       cfg.Server.ReadTimeout,
 		WriteTimeout:      cfg.Server.WriteTimeout,

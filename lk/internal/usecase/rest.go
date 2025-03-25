@@ -4,18 +4,26 @@ import (
 	"back/lk/internal/entity"
 	"back/lk/internal/repo"
 	"context"
+	"fmt"
+)
+
+const (
+	ImageTypeRestaurant string = "restaurant"
+	ImageTypeFood       string = "food"
 )
 
 type RestInterface interface {
 	GetInfo(ctx context.Context, id uint64) (entity.Rest, error)
+	UploadLogo(ctx context.Context, file []byte, extention string, mimeType string, restId uint64) error
 }
 
 type Rest struct {
-	repo repo.RestInterface
+	repo  repo.RestInterface
+	minio repo.RepoMinio
 }
 
-func NewRest(r repo.RestInterface) RestInterface {
-	return &Rest{repo: r}
+func NewRest(r repo.RestInterface, m repo.RepoMinio) RestInterface {
+	return &Rest{repo: r, minio: m}
 }
 
 func (u *Rest) GetInfo(ctx context.Context, id uint64) (entity.Rest, error) {
@@ -29,4 +37,17 @@ func (u *Rest) GetInfo(ctx context.Context, id uint64) (entity.Rest, error) {
 	}
 	res.Schedule = schedule
 	return res, nil
+}
+
+func (u *Rest) UploadLogo(ctx context.Context, file []byte, extention string, mimeType string, restId uint64) error {
+	path := fmt.Sprintf("%s/%d/logo_url%s", ImageTypeRestaurant, restId, extention)
+	url, err := u.minio.UploadImage(ctx, file, path, mimeType)
+	if err != nil {
+		return err
+	}
+	err = u.repo.PutLogoImage(ctx, url, restId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

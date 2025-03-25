@@ -11,6 +11,7 @@ import (
 type RestInterface interface {
 	GetBaseInfo(ctx context.Context, id uint64) (entity.Rest, error)
 	GetSchedule(ctx context.Context, id uint64) ([]entity.Schedule, error)
+	PutLogoImage(ctx context.Context, url string, id uint64) error
 }
 
 type Rest struct {
@@ -56,4 +57,13 @@ func (r *Rest) GetSchedule(ctx context.Context, id uint64) ([]entity.Schedule, e
 		res = append(res, s)
 	}
 	return res, nil
+}
+
+func (r *Rest) PutLogoImage(ctx context.Context, url string, id uint64) error {
+	query := `update restaurant set logo_url=$1 where id=$2`
+	_, err := r.db.Exec(ctx, query, url, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
