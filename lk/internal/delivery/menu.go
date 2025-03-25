@@ -36,6 +36,20 @@ func (h *MenuHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
 	response.WriteData(w, resDTO, 200)
 }
 
+func (h *MenuHandler) GetCategoryList(w http.ResponseWriter, r *http.Request) {
+	restId := uint64(1)
+	res, err := h.usecase.GetCategoryList(context.Background(), restId)
+	if err != nil {
+		response.WithError(w, 500, "GetCategoryList", err)
+		return
+	}
+	resDTO := make([]entity.CategoryDTO, len(res))
+	for i, c := range res {
+		resDTO[i] = c.ToDTO()
+	}
+	response.WriteData(w, resDTO, 200)
+}
+
 // еда по статусу для определенной категории
 func (h *MenuHandler) GetFoodByStatus(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
