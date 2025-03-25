@@ -29,7 +29,7 @@ func NewMenu(db *pgxpool.Pool) MenuInterface {
 }
 
 func (m *Menu) GetCategories(ctx context.Context, restId uint64) (entity.CategoryList, error) {
-	query := `select id, name from category where restaurant_id=$1`
+	query := `select id, name, restaurant_id from category where restaurant_id=$1`
 	var res entity.CategoryList
 	rows, err := m.db.Query(ctx, query, restId)
 	if err != nil {
@@ -37,7 +37,7 @@ func (m *Menu) GetCategories(ctx context.Context, restId uint64) (entity.Categor
 	}
 	for rows.Next() {
 		var c entity.Category
-		err := rows.Scan(&c.ID, &c.Name)
+		err := rows.Scan(&c.ID, &c.Name, &c.RestaurantID)
 		if err != nil {
 			return entity.CategoryList{}, err
 		}

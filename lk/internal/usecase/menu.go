@@ -8,6 +8,7 @@ import (
 
 type MenuInterface interface {
 	GetMenu(ctx context.Context, restId uint64) (entity.CategoryList, error)
+	GetCategoryList(ctx context.Context, restId uint64) (entity.CategoryList, error)
 	GetFoodByStatus(ctx context.Context, status entity.FoodStatus, categoryId uint64) (entity.FoodList, error)
 	AddFood(ctx context.Context, food entity.Food) (entity.Food, error)
 	DeleteFood(ctx context.Context, id uint64) error
@@ -38,6 +39,14 @@ func (m *Menu) GetMenu(ctx context.Context, restId uint64) (entity.CategoryList,
 			return entity.CategoryList{}, err
 		}
 		categories[i].Items = food
+	}
+	return categories, nil
+}
+
+func (m *Menu) GetCategoryList(ctx context.Context, restId uint64) (entity.CategoryList, error) {
+	categories, err := m.repo.GetCategories(ctx, restId)
+	if err != nil {
+		return entity.CategoryList{}, err
 	}
 	return categories, nil
 }

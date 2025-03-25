@@ -40,7 +40,7 @@ type CategoryDTO struct {
 	ID           uint64    `json:"id"`
 	Name         string    `json:"name"`
 	RestaurantID uint64    `json:"restaurant_id,omitempty"`
-	Items        []FoodDTO `json:"items"`
+	Items        []FoodDTO `json:"items,omitempty"`
 }
 
 func (dto *CategoryDTO) ToCategory() Category {

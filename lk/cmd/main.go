@@ -60,6 +60,7 @@ func main() {
 	menu := r.PathPrefix("/menu").Subrouter()
 	{
 		menu.HandleFunc("", menuHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)
+		menu.HandleFunc("/category-list", menuHandler.GetCategoryList).Methods(http.MethodGet, http.MethodOptions)
 		menu.HandleFunc("/{category_id}", menuHandler.GetFoodByStatus).Methods(http.MethodGet, http.MethodOptions)
 		menu.HandleFunc("/food/add", menuHandler.AddFood).Methods(http.MethodPost, http.MethodOptions)
 		menu.HandleFunc("/food/{id}", menuHandler.DeleteFood).Methods(http.MethodDelete, http.MethodOptions)
