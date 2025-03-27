@@ -17,6 +17,59 @@ type InfoResponse struct {
 	SocialMedia []SocialMediaDTO `json:"media"`
 }
 
+type BaseInfoRequest struct {
+	Id      uint32 `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Logo    string `json:"logo_url"`
+	Phone   string `json:"phone"`
+	Email   string `json:"email"`
+}
+
+type DescripAndImgs struct {
+	Description    []string
+	DescripIndexes []uint8
+	Img            []Img
+}
+
+type Img struct {
+	Index    uint8
+	Data     []byte
+	Ext      string
+	MimeType string
+}
+
+type BaseInfo struct {
+	Id      uint32
+	Name    string
+	Address string
+	Logo    string
+	Phone   string
+	Email   string
+}
+
+func (b *BaseInfoRequest) FromDTO() BaseInfo {
+	return BaseInfo{
+		Id:      b.Id,
+		Name:    b.Name,
+		Address: b.Address,
+		Logo:    b.Logo,
+		Phone:   b.Phone,
+		Email:   b.Email,
+	}
+}
+
+func (b *BaseInfo) ToDTO() BaseInfoRequest {
+	return BaseInfoRequest{
+		Id:      b.Id,
+		Name:    b.Name,
+		Address: b.Address,
+		Logo:    b.Logo,
+		Phone:   b.Phone,
+		Email:   b.Email,
+	}
+}
+
 type ScheduleDTO struct {
 	Day   string `json:"day"`
 	Open  string `json:"open_time"`

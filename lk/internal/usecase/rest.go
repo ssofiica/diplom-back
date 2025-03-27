@@ -14,7 +14,9 @@ const (
 
 type RestInterface interface {
 	GetInfo(ctx context.Context, id uint64) (entity.Rest, error)
+	UploadBaseInfo(ctx context.Context, info entity.BaseInfo, id uint64) (entity.BaseInfo, error)
 	UploadLogo(ctx context.Context, file []byte, extention string, mimeType string, restId uint64) error
+	UploadDescriptionAndImages(ctx context.Context, info *entity.DescripAndImgs, restId uint64) error
 }
 
 type Rest struct {
@@ -39,6 +41,10 @@ func (u *Rest) GetInfo(ctx context.Context, id uint64) (entity.Rest, error) {
 	return res, nil
 }
 
+func (u *Rest) UploadBaseInfo(ctx context.Context, info entity.BaseInfo, id uint64) (entity.BaseInfo, error) {
+	return u.repo.UploadBaseInfo(ctx, info, id)
+}
+
 func (u *Rest) UploadLogo(ctx context.Context, file []byte, extention string, mimeType string, restId uint64) error {
 	path := fmt.Sprintf("%s/%d/logo_url%s", ImageTypeRestaurant, restId, extention)
 	url, err := u.minio.UploadImage(ctx, file, path, mimeType)
@@ -48,6 +54,29 @@ func (u *Rest) UploadLogo(ctx context.Context, file []byte, extention string, mi
 	err = u.repo.PutLogoImage(ctx, url, restId)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (u *Rest) UploadDescriptionAndImages(ctx context.Context, info *entity.DescripAndImgs, restId uint64) error {
+	if info.Description != nil {
+		for i, str := range info.Description {
+			err := u.repo.UpdateDescrip(ctx, str, info.DescripIndexes[i], restId)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	for _, img := range info.Img {
+		path := fmt.Sprintf("%s/%d/%d%s", ImageTypeRestaurant, restId, img.Index, img.Ext)
+		url, err := u.minio.UploadImage(ctx, img.Data, path, img.MimeType)
+		if err != nil {
+			return err
+		}
+		err = u.repo.PutImgUrl(ctx, url, img.Index, restId)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
