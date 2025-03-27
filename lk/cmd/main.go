@@ -73,7 +73,9 @@ func main() {
 	info := r.PathPrefix("/info").Subrouter()
 	{
 		info.HandleFunc("", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
+		info.HandleFunc("/base", infoHandler.UploadBaseInfo).Methods(http.MethodPost, http.MethodOptions)
 		info.HandleFunc("/upload-logo", infoHandler.UploadImage).Methods(http.MethodPost, http.MethodOptions)
+		info.HandleFunc("/site-content", infoHandler.UploadDescriptionsAndImages).Methods(http.MethodPost, http.MethodOptions)
 	}
 
 	srv := &http.Server{
