@@ -5,6 +5,7 @@ import (
 )
 
 type OrderStatus string
+type OrderType string
 
 var (
 	OrderStatusDraft    OrderStatus = "draft"
@@ -13,6 +14,9 @@ var (
 	OrderStatusReady    OrderStatus = "ready"
 	OrderStatusFinished OrderStatus = "finished"
 	OrderStatusCanceled OrderStatus = "canceled"
+
+	OrderTypeDelivery OrderType = "delivery"
+	OrderTypePickup   OrderType = "pickup"
 )
 
 type Order struct {
@@ -20,8 +24,10 @@ type Order struct {
 	UserID       uint32
 	Status       OrderStatus
 	Address      string
+	Type         OrderType
 	Sum          uint32
 	RestaurantID uint32
+	Comment      string
 	Food         OrderFoodList
 	CreatedAt    time.Time
 	AcceptedAt   time.Time
@@ -33,12 +39,18 @@ type Order struct {
 type OrderDTO struct {
 	Id           uint32         `json:"id"`
 	UserID       uint32         `json:"user_id"`
-	CreatedAt    time.Time      `json:"created_at"`
 	Status       string         `json:"status"`
-	Address      string         `json:"address"`
+	Address      string         `json:"address,omitempty"`
 	Sum          uint32         `json:"sum"`
 	RestaurantID uint32         `json:"restaurant_id"`
+	Comment      string         `json:"comment,omitempty"`
 	Food         []OrderFoodDTO `json:"food"`
+	Type         string         `json:"type,omitempty"`
+	CreatedAt    time.Time      `json:"created_at,omitempty"`
+	AcceptedAt   time.Time      `json:"accepted_at,omitempty"`
+	ReadydAt     time.Time      `json:"ready_at,omitempty"`
+	FinishedAt   time.Time      `json:"finished_at,omitempty"`
+	CanceledAt   time.Time      `json:"canceled_at,omitempty"`
 }
 
 func (o *Order) ToDTO() OrderDTO {
@@ -46,12 +58,18 @@ func (o *Order) ToDTO() OrderDTO {
 	return OrderDTO{
 		Id:           o.Id,
 		UserID:       o.UserID,
-		CreatedAt:    o.CreatedAt,
 		Status:       string(o.Status),
+		Type:         string(o.Type),
 		Address:      o.Address,
 		Sum:          o.Sum,
 		RestaurantID: o.RestaurantID,
+		Comment:      o.Comment,
 		Food:         f,
+		CreatedAt:    o.CreatedAt,
+		AcceptedAt:   o.AcceptedAt,
+		ReadydAt:     o.ReadydAt,
+		FinishedAt:   o.FinishedAt,
+		CanceledAt:   o.CanceledAt,
 	}
 }
 
@@ -61,7 +79,29 @@ type RequestAddFood struct {
 }
 
 func (r *RequestAddFood) Valid() bool {
-	return r.FoodId > 0 && r.Count > 0
+	return r.FoodId > 0 && r.Count >= 0
+}
+
+type RequestBasketInfo struct {
+	Address string `json:"address"`
+	Type    string `json:"type"`
+	Comment string `json:"comment"`
+}
+
+func (r *RequestBasketInfo) Valid() bool {
+	if r.Comment != "" && len(r.Comment) > 512 {
+		return false
+	}
+	if r.Address != "" && len(r.Address) > 256 {
+		return false
+	}
+	if r.Type != "" && (r.Type != string(OrderTypeDelivery) && r.Type != string(OrderTypePickup)) {
+		return false
+	}
+	if r.Type == "" && r.Address == "" && r.Comment == "" {
+		return false
+	}
+	return true
 }
 
 type OrderFood struct {
