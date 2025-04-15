@@ -3,6 +3,7 @@ package repo
 import (
 	"back/vitrina/internal/entity"
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,6 +15,8 @@ type FoodInterface interface {
 	GetFoodById(ctx context.Context, id uint32) (entity.Food, error)
 	AddToOrder(ctx context.Context, tx pgx.Tx, orderId, foodId uint32, count uint8) error
 	GetOrderFood(ctx context.Context, id uint32) ([]entity.OrderFood, error)
+	GetFoodCountInBasket(ctx context.Context, tx pgx.Tx, foodId uint32, orderId uint32) (uint8, error)
+	DeleteFoodFromBasket(ctx context.Context, tx pgx.Tx, foodId uint32, orderId uint32) error
 }
 
 type Food struct {
@@ -67,7 +70,7 @@ func (r *Food) AddToOrder(ctx context.Context, tx pgx.Tx, orderId, foodId uint32
 	query1 := `insert into order_food (order_id, food_id, count)
 				values ($1, $2, $3)
 				ON CONFLICT (food_id, order_id) DO UPDATE 
-				SET count = order_food.count + EXCLUDED.count`
+				SET count = EXCLUDED.count`
 	_, err := tx.Exec(ctx, query1, orderId, foodId, count)
 	if err != nil {
 		return err
@@ -103,4 +106,26 @@ func (r *Food) GetOrderFood(ctx context.Context, id uint32) ([]entity.OrderFood,
 		res = append(res, tmp)
 	}
 	return res, nil
+}
+
+func (r *Food) GetFoodCountInBasket(ctx context.Context, tx pgx.Tx, foodId uint32, orderId uint32) (uint8, error) {
+	query := `select count from order_food where order_id=$1 and food_id=$2`
+	var res uint8
+	err := tx.QueryRow(ctx, query, orderId, foodId).Scan(&res)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return res, nil
+}
+
+func (r *Food) DeleteFoodFromBasket(ctx context.Context, tx pgx.Tx, foodId uint32, orderId uint32) error {
+	query := `delete from order_food where order_id=$1 and food_id=$2`
+	_, err := tx.Exec(ctx, query, orderId, foodId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

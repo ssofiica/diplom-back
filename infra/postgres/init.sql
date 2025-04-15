@@ -54,16 +54,22 @@ CREATE TABLE IF NOT EXISTS "user" (
     password TEXT
 );
 
---TODO: доделать
 CREATE TABLE IF NOT EXISTS "order" (
     id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INTEGER
         CONSTRAINT foreign_key_user CHECK (user_id > 0) REFERENCES "user" (id) ON DELETE CASCADE,
     status TEXT NOT NULL,
+    address TEXT CONSTRAINT order_address_length CHECK (LENGTH(address) BETWEEN 2 AND 200),
     sum INTEGER NOT NULL DEFAULT 0,
     restaurant_id INTEGER
         CONSTRAINT foreign_key_rest CHECK (restaurant_id > 0) REFERENCES restaurant (id) ON DELETE CASCADE,
-    created_at TIME NOT NULL DEFAULT NOW()
+    comment TEXT CONSTRAINT order_comment_length CHECK (LENGTH(comment) BETWEEN 2 AND 256),
+    "type" TEXT,
+    created_at TIME NOT NULL DEFAULT NOW(),
+    accepted_at TIME,
+    ready_at TIME,
+    finished_at TIME,
+    canceled_at TIME
 );
 
 CREATE TABLE IF NOT EXISTS order_food (
@@ -77,11 +83,11 @@ CREATE TABLE IF NOT EXISTS order_food (
 );
 
 insert into restaurant(name, email) values ('Mates', 'mates@yandex.ru');
-insert into category(name) values ('Pizza');
+insert into category(name, restaurant_id) values ('Пицца', 1), ('Салаты', 1), ('Паста',1);
 insert into food(name, weight, category_id, price, restaurant_id, img_url, status) values 
-('Пицца Маргарита', 370, 1, 500, 1, 'localhost:9000/1', 'in'),
-('Буррата со страчателой', 400, 2, 500, 1, '', 'in'),
-('С креветками', 340, 3, 600, 1, '', 'in'),
-('Карбонара', 400, 3, 700, 1, '', 'in'),
-('Лазанья', 380, 3, 670, 1, '', 'in');
+('Пицца Маргарита', 370, 1, 500, 1, 'food/1/1.jpg', 'in'),
+('Буррата со страчателой', 400, 2, 500, 1, 'food/1/2.jpg', 'in'),
+('С креветками', 340, 3, 600, 1, 'food/1/3.jpg', 'in'),
+('Карбонара', 400, 3, 700, 1, 'food/1/4.jpg', 'in'),
+('Лазанья', 380, 3, 670, 1, 'food/1/5.jpg', 'in');
 insert into "user"(name, phone) values ('sofia', '89009009090');

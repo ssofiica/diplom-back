@@ -4,7 +4,6 @@ import (
 	"back/vitrina/internal/entity"
 	"back/vitrina/internal/repo"
 	"errors"
-	"fmt"
 
 	"context"
 )
@@ -15,6 +14,8 @@ type OrderInterface interface {
 	AddFoodToOrder(ctx context.Context, userId, restId uint32, data entity.RequestAddFood) error
 	GetBasketId(ctx context.Context, userId uint32) (uint32, error)
 	GetBasket(ctx context.Context, userId, id uint32) (entity.Order, error)
+	GetOrderById(ctx context.Context, id uint32) (entity.Order, error)
+	UpdateBasketInfo(ctx context.Context, userId uint32, info entity.RequestBasketInfo) (entity.Order, error)
 }
 
 type Order struct {
@@ -42,7 +43,6 @@ func (u *Order) AddFoodToOrder(ctx context.Context, userId, restId uint32, data 
 	} else {
 		id = order.Id
 	}
-	fmt.Println(id)
 	// проверяем, что блюдо в наличии
 	is, err := u.repoFood.IsInStock(ctx, data.FoodId)
 	if err != nil {
@@ -63,13 +63,36 @@ func (u *Order) AddFoodToOrder(ctx context.Context, userId, restId uint32, data 
 	}
 	defer tx.Rollback(ctx)
 
+	countNow, err := u.repoFood.GetFoodCountInBasket(ctx, tx, data.FoodId, id)
+	if err != nil {
+		return err
+	}
+	if data.Count == 0 {
+		err = u.repoFood.DeleteFoodFromBasket(ctx, tx, data.FoodId, id)
+		if err != nil {
+			return err
+		}
+		err = u.repoOrder.UpdateBasketSum(ctx, tx, id, uint16(countNow)*food.Price, false)
+		if err != nil {
+			return err
+		}
+		err = tx.Commit(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	// добавляем блюдо
 	err = u.repoFood.AddToOrder(ctx, tx, id, data.FoodId, data.Count)
 	if err != nil {
 		return err
 	}
-	// меняем сумму заказа
-	err = u.repoOrder.UpdateBasketSum(ctx, tx, id, food.Price)
+	if num := int16(data.Count) - int16(countNow); num > 0 {
+		err = u.repoOrder.UpdateBasketSum(ctx, tx, id, uint16(num)*food.Price, true)
+	} else {
+		dif := countNow - data.Count
+		err = u.repoOrder.UpdateBasketSum(ctx, tx, id, uint16(dif)*food.Price, false)
+	}
 	if err != nil {
 		return err
 	}
@@ -94,9 +117,43 @@ func (u *Order) GetBasket(ctx context.Context, userId, id uint32) (entity.Order,
 		return entity.Order{}, err
 	}
 	if order.Id == 0 {
-		return entity.Order{}, nil
+		return order, nil
 	}
 	food, err := u.repoFood.GetOrderFood(ctx, order.Id)
+	if err != nil {
+		return entity.Order{}, err
+	}
 	order.Food = food
+	return order, nil
+}
+
+func (u *Order) GetOrderById(ctx context.Context, id uint32) (entity.Order, error) {
+	order, err := u.repoOrder.GetOrderById(ctx, id)
+	if err != nil {
+		return entity.Order{}, err
+	}
+	if order.Id == 0 {
+		return order, nil
+	}
+	food, err := u.repoFood.GetOrderFood(ctx, order.Id)
+	if err != nil {
+		return entity.Order{}, err
+	}
+	order.Food = food
+	return order, nil
+}
+
+func (u *Order) UpdateBasketInfo(ctx context.Context, userId uint32, info entity.RequestBasketInfo) (entity.Order, error) {
+	order, err := u.repoOrder.GetUserBasket(ctx, userId, 0)
+	if err != nil {
+		return entity.Order{}, err
+	}
+	if order.Id == 0 {
+		return order, nil
+	}
+	order, err = u.repoOrder.UpdateBasketInfo(ctx, order.Id, info)
+	if err != nil {
+		return entity.Order{}, err
+	}
 	return order, nil
 }
