@@ -64,12 +64,12 @@ CREATE TABLE IF NOT EXISTS "order" (
     restaurant_id INTEGER
         CONSTRAINT foreign_key_rest CHECK (restaurant_id > 0) REFERENCES restaurant (id) ON DELETE CASCADE,
     comment TEXT CONSTRAINT order_comment_length CHECK (LENGTH(comment) BETWEEN 2 AND 256),
-    "type" TEXT,
-    created_at TIME NOT NULL DEFAULT NOW(),
-    accepted_at TIME,
-    ready_at TIME,
-    finished_at TIME,
-    canceled_at TIME
+    "type" TEXT DEFAULT 'pickup',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    accepted_at TIMESTAMPTZ,
+    ready_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
+    canceled_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS order_food (

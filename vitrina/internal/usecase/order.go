@@ -9,6 +9,7 @@ import (
 )
 
 var ErrFoodStoped = errors.New("Блюда нет в наличии")
+var ErrNeedAddress = errors.New("Требуется добавить адрес доставки")
 
 type OrderInterface interface {
 	AddFoodToOrder(ctx context.Context, userId, restId uint32, data entity.RequestAddFood) error
@@ -16,6 +17,9 @@ type OrderInterface interface {
 	GetBasket(ctx context.Context, userId, id uint32) (entity.Order, error)
 	GetOrderById(ctx context.Context, id uint32) (entity.Order, error)
 	UpdateBasketInfo(ctx context.Context, userId uint32, info entity.RequestBasketInfo) (entity.Order, error)
+	Pay(ctx context.Context, userId uint32) (uint32, error)
+	Current(ctx context.Context, userId uint32) (entity.MiniOrderList, error)
+	Archive(ctx context.Context, userId uint32) (entity.MiniOrderList, error)
 }
 
 type Order struct {
@@ -156,4 +160,52 @@ func (u *Order) UpdateBasketInfo(ctx context.Context, userId uint32, info entity
 		return entity.Order{}, err
 	}
 	return order, nil
+}
+
+func (u *Order) Pay(ctx context.Context, userId uint32) (uint32, error) {
+	order, err := u.repoOrder.GetUserBasket(ctx, userId, 0)
+	if err != nil {
+		return 0, err
+	}
+	if order.Id == 0 {
+		return 0, nil
+	}
+	if order.Type == entity.OrderTypeDelivery && order.Address == "" {
+		return 0, ErrNeedAddress
+	}
+	err = u.repoOrder.UpdateStatus(ctx, order.Id, entity.OrderStatusCreated)
+	if err != nil {
+		return 0, err
+	}
+	return order.Id, nil
+}
+
+func (u *Order) Current(ctx context.Context, userId uint32) (entity.MiniOrderList, error) {
+	res := entity.MiniOrderList{}
+	statuses := []entity.OrderStatus{
+		entity.OrderStatusCreated,
+		entity.OrderStatusAccepted,
+		entity.OrderStatusReady,
+	}
+	res, err := u.repoOrder.GetMiniOrdersByStatus(ctx, userId, statuses)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+func (u *Order) Archive(ctx context.Context, userId uint32) (entity.MiniOrderList, error) {
+	res := entity.MiniOrderList{}
+	statuses := []entity.OrderStatus{
+		entity.OrderStatusCreated,
+		entity.OrderStatusAccepted,
+		entity.OrderStatusReady,
+		entity.OrderStatusFinished,
+		entity.OrderStatusCanceled,
+	}
+	res, err := u.repoOrder.GetMiniOrdersByStatus(ctx, userId, statuses)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }

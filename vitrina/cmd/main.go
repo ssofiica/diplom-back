@@ -52,11 +52,11 @@ func main() {
 	{
 		order.HandleFunc("/food", orderHandler.ChangeFoodCountInBasket).Methods(http.MethodPost, http.MethodOptions)
 		order.HandleFunc("/basket", orderHandler.GetUserBasket).Methods(http.MethodGet, http.MethodOptions)
-		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
 		order.HandleFunc("/info", orderHandler.UpdateBasketInfo).Methods(http.MethodPost, http.MethodOptions)
-		//order.HandleFunc("/current", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
-		//order.HandleFunc("/archive", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
-		//order.HandleFunc("/pay", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/pay", orderHandler.Pay).Methods(http.MethodPost, http.MethodOptions)
+		order.HandleFunc("/current", orderHandler.GetCurrent).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/archive", orderHandler.GetArchive).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
 	}
 
 	srv := &http.Server{

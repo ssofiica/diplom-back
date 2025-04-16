@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -106,7 +105,6 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 		}
 		img.Data = fileBytes
 		img.Ext = filepath.Ext(fileHeader.Filename)
-		fmt.Println(fileHeader.Filename)
 		mime := GetMimeType(img.Ext)
 		if mime == "" {
 			response.WithError(w, 400, "UploadImage", errors.New(""))
