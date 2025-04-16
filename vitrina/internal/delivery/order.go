@@ -122,12 +122,43 @@ func (h *OrderHandler) UpdateBasketInfo(w http.ResponseWriter, r *http.Request) 
 	response.WriteData(w, res.ToDTO(), 200)
 }
 
+func (h *OrderHandler) Pay(w http.ResponseWriter, r *http.Request) {
+	//restId := uint32(1)
+	userId := uint32(1)
+	id, err := h.usecase.Pay(context.Background(), userId)
+	if err != nil {
+		if errors.Is(err, usecase.ErrNeedAddress) {
+			response.WriteData(w, err.Error(), 200)
+			return
+		}
+		response.WithError(w, 500, "Pay", err)
+		return
+	}
+	res, err := h.usecase.GetOrderById(context.Background(), id)
+	if err != nil {
+		response.WithError(w, 500, "Pay", err)
+		return
+	}
+	response.WriteData(w, res.ToDTO(), 200)
+}
+
+func (h *OrderHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
+	//restId := uint32(1)
+	userId := uint32(1)
+	res, err := h.usecase.Current(context.Background(), userId)
+	if err != nil {
+		response.WithError(w, 500, "GetCurrent", err)
+		return
+	}
+	response.WriteData(w, res.ToDTO(), 200)
+}
+
 func (h *OrderHandler) GetArchive(w http.ResponseWriter, r *http.Request) {
 	//restId := uint32(1)
 	userId := uint32(1)
-	res, err := h.usecase.GetBasket(context.Background(), userId, 0)
+	res, err := h.usecase.Archive(context.Background(), userId)
 	if err != nil {
-		response.WithError(w, 500, "GetOrderById", err)
+		response.WithError(w, 500, "GetCurrent", err)
 		return
 	}
 	response.WriteData(w, res.ToDTO(), 200)

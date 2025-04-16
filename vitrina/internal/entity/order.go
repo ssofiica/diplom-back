@@ -44,8 +44,8 @@ type OrderDTO struct {
 	Sum          uint32         `json:"sum"`
 	RestaurantID uint32         `json:"restaurant_id"`
 	Comment      string         `json:"comment,omitempty"`
-	Food         []OrderFoodDTO `json:"food"`
 	Type         string         `json:"type,omitempty"`
+	Food         []OrderFoodDTO `json:"food"`
 	CreatedAt    time.Time      `json:"created_at,omitempty"`
 	AcceptedAt   time.Time      `json:"accepted_at,omitempty"`
 	ReadydAt     time.Time      `json:"ready_at,omitempty"`
@@ -129,6 +129,55 @@ func (o *OrderFoodList) ToDTO() []OrderFoodDTO {
 		return []OrderFoodDTO{}
 	}
 	res := make([]OrderFoodDTO, length)
+	for i, tmp := range *o {
+		res[i] = tmp.ToDTO()
+	}
+	return res
+}
+
+type MiniOrder struct {
+	Id           uint32
+	UserID       uint32
+	Status       OrderStatus
+	Address      string
+	Type         OrderType
+	Sum          uint32
+	RestaurantID uint32
+	CreatedAt    time.Time
+}
+
+func (o *MiniOrder) ToDTO() MiniOrderDTO {
+	return MiniOrderDTO{
+		Id:           o.Id,
+		UserID:       o.UserID,
+		Status:       o.Status,
+		Address:      o.Address,
+		Type:         o.Type,
+		Sum:          o.Sum,
+		RestaurantID: o.RestaurantID,
+		CreatedAt:    o.CreatedAt,
+	}
+}
+
+type MiniOrderDTO struct {
+	Id           uint32      `json:"id"`
+	UserID       uint32      `json:"user_id"`
+	Status       OrderStatus `json:"status"`
+	Address      string      `json:"address,omitempty"`
+	Type         OrderType   `json:"type"`
+	Sum          uint32      `json:"sum"`
+	RestaurantID uint32      `json:"restaurant_id"`
+	CreatedAt    time.Time   `json:"created_at"`
+}
+
+type MiniOrderList []MiniOrder
+
+func (o *MiniOrderList) ToDTO() []MiniOrderDTO {
+	length := len(*o)
+	if length == 0 {
+		return []MiniOrderDTO{}
+	}
+	res := make([]MiniOrderDTO, length)
 	for i, tmp := range *o {
 		res[i] = tmp.ToDTO()
 	}
