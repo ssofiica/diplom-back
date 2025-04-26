@@ -61,7 +61,7 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:              fmt.Sprintf("%s:%s", cfg.Server.Host, os.Getenv("SERVER_PORT")),
+		Addr:              fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("SERVER_PORT")),
 		Handler:           r,
 		ReadTimeout:       cfg.Server.ReadTimeout,
 		WriteTimeout:      cfg.Server.WriteTimeout,
