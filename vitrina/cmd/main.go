@@ -4,6 +4,7 @@ import (
 	"back/infra/postgres"
 	"back/vitrina/config"
 	"back/vitrina/internal/delivery"
+	"back/vitrina/internal/middleware"
 	"back/vitrina/internal/repo"
 	"back/vitrina/internal/usecase"
 	"context"
@@ -44,7 +45,7 @@ func main() {
 		fmt.Println("query to path: " + r.URL.String())
 		w.WriteHeader(http.StatusOK)
 	})
-	//r.Use() //тут мидлвары вставить надо аргументами
+	r.Use(middleware.CorsMiddleware)
 
 	r.HandleFunc("/info", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/menu", infoHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)
