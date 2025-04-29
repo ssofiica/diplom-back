@@ -215,7 +215,7 @@ func (r *Order) GetMiniOrdersByStatus(ctx context.Context, userId uint32, status
 	}
 
 	query := fmt.Sprintf(`select id, user_id, status, address, type, sum, restaurant_id,
-				created_at from "order" where user_id=$1 and status IN (%s)`, strings.Join(placeholders, ", "))
+				created_at from "order" where user_id=$1 and status IN (%s) order by created_at DESC`, strings.Join(placeholders, ", "))
 	var res entity.MiniOrderList
 	rows, err := r.db.Query(ctx, query, userId)
 	if err != nil {
