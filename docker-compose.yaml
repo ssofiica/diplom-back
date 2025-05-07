@@ -29,13 +29,21 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_SERVER_URL=http://localhost:9000
-      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_SERVER_URL=http://${HOST}:9000
+      - MINIO_BROWSER_REDIRECT_URL=http://${HOST}:9001
     command: server --console-address ":9001" /data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    restart: always
+    env_file: .env
+    container_name: clickhouse-d
+    ports:
+      - "8123:8123"  # HTTP-интерфейс
+      - "9002:9000"  # Нативный протокол
+    volumes:
+      - ./infra/click/data:/var/lib/clickhouse
+      - ./infra/click/init.sql:/docker-entrypoint-initdb.d/initdb.sql
+    environment:
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-default}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-user}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-password}

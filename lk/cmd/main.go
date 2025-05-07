@@ -1,6 +1,7 @@
 package main
 
 import (
+	"back/infra/click"
 	"back/infra/minio"
 	"back/infra/postgres"
 	"back/lk/config"
@@ -41,14 +42,30 @@ func main() {
 		log.Fatalf("Error initializing MinIO: %v", err)
 	}
 
-	menuRepo := repo.NewMenu(db)
-	menuUsecase := usecase.NewMenu(menuRepo)
-	menuHandler := delivery.NewMenuHandler(menuUsecase)
+	clickClient, err := click.NewClickHouseClient(
+		os.Getenv("HOST"),
+		os.Getenv("CLICKHOUSE_PORT"),
+		os.Getenv("CLICKHOUSE_DB"),
+		os.Getenv("CLICKHOUSE_USER"),
+		os.Getenv("CLICKHOUSE_PASSWORD"),
+	)
+	if err != nil {
+		log.Fatalf("Failed to connect clickhouse: %v", err)
+	}
+
 	minio := repo.NewMinio(minioClient)
+
+	menuRepo := repo.NewMenu(db)
+	menuUsecase := usecase.NewMenu(menuRepo, minio)
+	menuHandler := delivery.NewMenuHandler(menuUsecase)
 
 	infoRepo := repo.NewRest(db)
 	infoUsecase := usecase.NewRest(infoRepo, minio)
 	infoHandler := delivery.NewRestHandler(infoUsecase)
+
+	orderRepo := repo.NewOrder(db, clickClient)
+	orderUsecase := usecase.NewOrder(orderRepo)
+	orderHandler := delivery.NewOrder(orderUsecase)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CorsMiddleware)
@@ -66,6 +83,7 @@ func main() {
 		menu.HandleFunc("/food/{id}", menuHandler.DeleteFood).Methods(http.MethodDelete, http.MethodOptions)
 		menu.HandleFunc("/food/{id}/change", menuHandler.EditFood).Methods(http.MethodPut, http.MethodOptions)
 		menu.HandleFunc("/food/{id}/status", menuHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
+		menu.HandleFunc("/food/{id}/img", menuHandler.UploadFoodImage).Methods(http.MethodPut, http.MethodOptions)
 		menu.HandleFunc("/category/add", menuHandler.AddCategory).Methods(http.MethodPost, http.MethodOptions)
 		menu.HandleFunc("/category/{id}", menuHandler.DeleteCategory).Methods(http.MethodDelete, http.MethodOptions)
 	}
@@ -76,6 +94,13 @@ func main() {
 		info.HandleFunc("/base", infoHandler.UploadBaseInfo).Methods(http.MethodPost, http.MethodOptions)
 		info.HandleFunc("/upload-logo", infoHandler.UploadImage).Methods(http.MethodPost, http.MethodOptions)
 		info.HandleFunc("/site-content", infoHandler.UploadDescriptionsAndImages).Methods(http.MethodPost, http.MethodOptions)
+	}
+
+	order := r.PathPrefix("/order").Subrouter()
+	{
+		order.HandleFunc("/mini-list", orderHandler.GetMiniOrders).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/{id}", orderHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	srv := &http.Server{
