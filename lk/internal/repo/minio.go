@@ -37,6 +37,5 @@ func (repo *Minio) UploadImage(ctx context.Context, file []byte, path string, mi
 	if err != nil {
 		return "", err
 	}
-	url := fmt.Sprintf("http://%s/%s/%s", repo.minio.Endpoint, repo.minio.BucketName, path)
-	return url, nil
+	return path, nil
 }

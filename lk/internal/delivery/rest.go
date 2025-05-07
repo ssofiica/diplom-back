@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"strconv"
 )
 
 type RestHandler struct {
@@ -48,8 +47,6 @@ func (h *RestHandler) UploadBaseInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
-
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
 		response.WithError(w, 400, "UploadDescriptionsAndImages", err)
@@ -107,7 +104,7 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 		img.Ext = filepath.Ext(fileHeader.Filename)
 		mime := GetMimeType(img.Ext)
 		if mime == "" {
-			response.WithError(w, 400, "UploadImage", errors.New(""))
+			response.WithError(w, 400, "UploadImage", errors.New("cant take mime type"))
 			return
 		}
 		img.Index = imgIndexArray[i]
@@ -124,13 +121,6 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 
 func (h *RestHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
-	if err != nil {
-		response.WithError(w, 400, "UploadImage", err)
-		return
-	}
-
-	id := r.FormValue("restaurant_id")
-	restId, err := strconv.Atoi(id)
 	if err != nil {
 		response.WithError(w, 400, "UploadImage", err)
 		return
