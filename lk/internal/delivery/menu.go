@@ -8,11 +8,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
+
+var restId = uint64(1)
 
 type MenuHandler struct {
 	usecase usecase.MenuInterface
@@ -23,7 +27,6 @@ func NewMenuHandler(u usecase.MenuInterface) *MenuHandler {
 }
 
 func (h *MenuHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
 	res, err := h.usecase.GetMenu(context.Background(), restId)
 	if err != nil {
 		response.WithError(w, 500, "GetMenu", err)
@@ -37,7 +40,6 @@ func (h *MenuHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) GetCategoryList(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
 	res, err := h.usecase.GetCategoryList(context.Background(), restId)
 	if err != nil {
 		response.WithError(w, 500, "GetCategoryList", err)
@@ -85,7 +87,9 @@ func (h *MenuHandler) AddFood(w http.ResponseWriter, r *http.Request) {
 		response.WithError(w, 400, "AddFood", err)
 		return
 	}
-	res, err := h.usecase.AddFood(context.Background(), payload.ToFood())
+	food := payload.ToFood()
+	food.RestaurantID = restId
+	res, err := h.usecase.AddFood(context.Background(), food)
 	if err != nil {
 		response.WithError(w, 500, "AddFood", err)
 		return
@@ -212,4 +216,51 @@ func (h *MenuHandler) ChangeStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.WriteData(w, nil, 200)
+}
+
+func (h *MenuHandler) UploadFoodImage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	value := vars["id"]
+	if value == "" {
+		fmt.Println("no id")
+		response.WithError(w, 400, "UploadFoodImage", errors.New("missing request var"))
+		return
+	}
+	id, err := strconv.Atoi(value)
+	if err != nil {
+		fmt.Println("err in converting str to int")
+		response.WithError(w, 400, "UploadFoodImage", err)
+		return
+	}
+
+	err = r.ParseMultipartForm(10 << 20) // 10 MB limit
+	if err != nil {
+		response.WithError(w, 400, "UploadFoodImage", err)
+		return
+	}
+
+	file, fileHeader, err := r.FormFile("img")
+	if err != nil {
+		response.WithError(w, 400, "UploadFoodImage", err)
+		return
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		response.WithError(w, 500, "UploadFoodImage", err)
+		return
+	}
+	fileExtension := filepath.Ext(fileHeader.Filename)
+	mimeType := GetMimeType(fileExtension)
+	if mimeType == "" {
+		response.WithError(w, 400, "UploadFoodImage", err)
+		return
+	}
+	path, err := h.usecase.UploadFoodLogo(context.Background(), fileBytes, fileExtension, mimeType, uint64(id), restId)
+	if err != nil {
+		response.WithError(w, 500, "UploadFoodImage", err)
+		return
+	}
+	response.WriteData(w, path, 200)
 }

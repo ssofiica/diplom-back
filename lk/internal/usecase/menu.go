@@ -4,7 +4,10 @@ import (
 	"back/lk/internal/entity"
 	"back/lk/internal/repo"
 	"context"
+	"fmt"
 )
+
+var defaultImg = "food/default.jpg"
 
 type MenuInterface interface {
 	GetMenu(ctx context.Context, restId uint64) (entity.CategoryList, error)
@@ -16,14 +19,16 @@ type MenuInterface interface {
 	DeleteCategory(ctx context.Context, id uint64) error
 	EditFood(ctx context.Context, id uint32, params entity.EditFood) (entity.Food, error)
 	ChangeStatus(ctx context.Context, id uint32, status string) error
+	UploadFoodLogo(ctx context.Context, file []byte, extention string, mimeType string, foodId uint64, restId uint64) (string, error)
 }
 
 type Menu struct {
-	repo repo.MenuInterface
+	repo  repo.MenuInterface
+	minio repo.RepoMinio
 }
 
-func NewMenu(r repo.MenuInterface) MenuInterface {
-	return &Menu{repo: r}
+func NewMenu(r repo.MenuInterface, m repo.RepoMinio) MenuInterface {
+	return &Menu{repo: r, minio: m}
 }
 
 func (m *Menu) GetMenu(ctx context.Context, restId uint64) (entity.CategoryList, error) {
@@ -56,6 +61,7 @@ func (m *Menu) GetFoodByStatus(ctx context.Context, status entity.FoodStatus, ca
 }
 
 func (m *Menu) AddFood(ctx context.Context, food entity.Food) (entity.Food, error) {
+	food.Img = defaultImg
 	res, err := m.repo.AddFood(ctx, food)
 	if err != nil {
 		return entity.Food{}, err
@@ -85,4 +91,17 @@ func (m *Menu) EditFood(ctx context.Context, id uint32, params entity.EditFood) 
 
 func (m *Menu) ChangeStatus(ctx context.Context, id uint32, status string) error {
 	return m.repo.ChangeStatus(ctx, id, status)
+}
+
+func (m *Menu) UploadFoodLogo(ctx context.Context, file []byte, extention string, mimeType string, foodId uint64, restId uint64) (string, error) {
+	path := fmt.Sprintf("%s/%d/%d%s", ImageTypeFood, restId, foodId, extention)
+	_, err := m.minio.UploadImage(ctx, file, path, mimeType)
+	if err != nil {
+		return "", err
+	}
+	err = m.repo.UpdateFoodImg(ctx, path, foodId)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }

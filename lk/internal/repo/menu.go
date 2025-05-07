@@ -18,6 +18,7 @@ type MenuInterface interface {
 	GetFoodForCategory(ctx context.Context, categoryId uint64, status string) (entity.FoodList, error)
 	ChangeStatus(ctx context.Context, id uint32, status string) error
 	EditFood(ctx context.Context, id uint32, params entity.EditFood) (entity.Food, error)
+	UpdateFoodImg(ctx context.Context, imgUrl string, id uint64) error
 }
 
 type Menu struct {
@@ -111,6 +112,12 @@ func (m *Menu) DeleteCategory(ctx context.Context, id uint64) error {
 func (m *Menu) ChangeStatus(ctx context.Context, id uint32, status string) error {
 	query := `update food set status=$1 where id=$2;`
 	_, err := m.db.Exec(ctx, query, status, id)
+	return err
+}
+
+func (m *Menu) UpdateFoodImg(ctx context.Context, imgUrl string, id uint64) error {
+	query := `update food set img_url=$1 where id=$2;`
+	_, err := m.db.Exec(ctx, query, imgUrl, id)
 	return err
 }
 
