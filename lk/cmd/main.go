@@ -54,6 +54,7 @@ func main() {
 	}
 
 	minio := repo.NewMinio(minioClient)
+	clickhouse := repo.NewClickHouse(clickClient)
 
 	menuRepo := repo.NewMenu(db)
 	menuUsecase := usecase.NewMenu(menuRepo, minio)
@@ -63,8 +64,8 @@ func main() {
 	infoUsecase := usecase.NewRest(infoRepo, minio)
 	infoHandler := delivery.NewRestHandler(infoUsecase)
 
-	orderRepo := repo.NewOrder(db, clickClient)
-	orderUsecase := usecase.NewOrder(orderRepo)
+	orderRepo := repo.NewOrder(db)
+	orderUsecase := usecase.NewOrder(orderRepo, clickhouse)
 	orderHandler := delivery.NewOrder(orderUsecase)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()

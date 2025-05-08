@@ -6,7 +6,6 @@ import (
 
 	"back/lk/internal/entity"
 
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,13 +20,11 @@ type OrderInterface interface {
 
 type Order struct {
 	db    *pgxpool.Pool
-	click *driver.Conn
 }
 
-func NewOrder(db *pgxpool.Pool, click *driver.Conn) OrderInterface {
+func NewOrder(db *pgxpool.Pool) OrderInterface {
 	return &Order{
 		db:    db,
-		click: click,
 	}
 }
 

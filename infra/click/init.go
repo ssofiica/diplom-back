@@ -1,17 +1,15 @@
 package click
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
-func NewClickHouseClient(host, port, db, user, pass string) (*driver.Conn, error) {
-	ctx := context.Background()
-	conn, err := clickhouse.Open(&clickhouse.Options{
+func NewClickHouseClient(host, port, db, user, pass string) (*sql.DB, error) {
+	conn := clickhouse.OpenDB(&clickhouse.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", host, port)},
 		Auth: clickhouse.Auth{
 			Database: db,
@@ -23,16 +21,11 @@ func NewClickHouseClient(host, port, db, user, pass string) (*driver.Conn, error
 		},
 		DialTimeout: 10 * time.Second, // Таймаут подключения
 	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err := conn.Ping(ctx); err != nil {
+	if err := conn.Ping(); err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
 			fmt.Printf("Exception [%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
 		}
 		return nil, err
 	}
-	return &conn, nil
+	return conn, nil
 }

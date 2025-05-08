@@ -24,7 +24,8 @@ CREATE TABLE order_food (
     restaurant_id UInt32,
     category String,
     category_id UInt32,
-    ordered_at DateTime
+    ordered_at DateTime,
+    order_status Enum('finished' = 1, 'canceled' = 2)
 )
 ENGINE = MergeTree()
 ORDER BY (ordered_at, restaurant_id);
