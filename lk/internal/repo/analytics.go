@@ -10,8 +10,8 @@ import (
 
 type AnalyticsInterface interface {
 	SetOrder(ctx context.Context, ord entity.Order) error
-	GetLinnerCharts(ctx context.Context, restId uint64, start, end time.Time) (entity.LinnerChartRepo, error)
-	GetTopFood(ctx context.Context, restId uint64, start, end time.Time) (entity.TopBar, error)
+	GetLinnerCharts(ctx context.Context, restId uint64, start, end string) (entity.LinnerChartRepo, error)
+	GetTopFood(ctx context.Context, restId uint64, start, end string) (entity.TopBar, error)
 }
 
 type Analytics struct {
@@ -34,7 +34,7 @@ var types = map[entity.OrderType]int{
 	entity.OrderTypeDelivery: 2,
 }
 
-func (r *Analytics) GetLinnerCharts(ctx context.Context, restId uint64, start, end time.Time) (entity.LinnerChartRepo, error) {
+func (r *Analytics) GetLinnerCharts(ctx context.Context, restId uint64, start, end string) (entity.LinnerChartRepo, error) {
 	query := `
         SELECT
 			toDate(created_at) AS date,
@@ -84,7 +84,7 @@ func (r *Analytics) GetLinnerCharts(ctx context.Context, restId uint64, start, e
 	}, nil
 }
 
-func (r *Analytics) GetTopFood(ctx context.Context, restId uint64, start, end time.Time) (entity.TopBar, error) {
+func (r *Analytics) GetTopFood(ctx context.Context, restId uint64, start, end string) (entity.TopBar, error) {
 	query := `
 		SELECT food_name, SUM(count) AS total_orders FROM order_food
         WHERE 
@@ -99,10 +99,8 @@ func (r *Analytics) GetTopFood(ctx context.Context, restId uint64, start, end ti
 		n     string
 		c     int
 	)
-	startDate := start.Format("2006-01-02")
-	endDate := end.Format("2006-01-02")
 
-	rows, err := r.conn.Query(query, startDate, endDate, uint32(restId))
+	rows, err := r.conn.Query(query, start, end, uint32(restId))
 	if err != nil {
 		return entity.TopBar{}, err
 	}

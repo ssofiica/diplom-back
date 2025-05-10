@@ -14,11 +14,6 @@ import "time"
 // currentTime := time.Now()
 // onlyDate := currentTime.Format("02-01-2006")
 
-type DateIntervalRequest struct {
-	Start time.Time `json:"start"`
-	End   time.Time `json:"end"`
-}
-
 type LinnerChart struct {
 	Title string
 	X     string

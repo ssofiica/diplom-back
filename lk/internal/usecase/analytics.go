@@ -2,14 +2,13 @@ package usecase
 
 import (
 	"context"
-	"time"
 
 	"back/lk/internal/entity"
 	"back/lk/internal/repo"
 )
 
 type AnalyticsInterface interface {
-	GetAnalytics(ctx context.Context, restId uint64, start, end time.Time) (entity.Analytics, error)
+	GetAnalytics(ctx context.Context, restId uint64, start, end string) (entity.Analytics, error)
 }
 
 type Analytics struct {
@@ -21,7 +20,7 @@ func NewAnalytics(c repo.AnalyticsInterface, m repo.MenuInterface) AnalyticsInte
 	return &Analytics{click: c, menu: m}
 }
 
-func (u *Analytics) GetAnalytics(ctx context.Context, restId uint64, start, end time.Time) (entity.Analytics, error) {
+func (u *Analytics) GetAnalytics(ctx context.Context, restId uint64, start, end string) (entity.Analytics, error) {
 	linner, err := u.click.GetLinnerCharts(ctx, restId, start, end)
 	if err != nil {
 		return entity.Analytics{}, err

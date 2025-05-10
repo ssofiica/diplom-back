@@ -2,11 +2,10 @@ package delivery
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
-	"back/lk/internal/entity"
 	"back/lk/internal/usecase"
-	"back/lk/internal/utils/request"
 	"back/lk/internal/utils/response"
 )
 
@@ -19,12 +18,14 @@ func NewAnalytics(u usecase.AnalyticsInterface) *Analytics {
 }
 
 func (h *Analytics) GetAnalytics(w http.ResponseWriter, r *http.Request) {
-	payload := entity.DateIntervalRequest{}
-	if err := request.GetRequestData(r, &payload); err != nil {
-		response.WithError(w, 400, "GetAnalytics", err)
+	params := r.URL.Query()
+	start := params.Get("start")
+	end := params.Get("end")
+	if start == "" || end == "" {
+		response.WithError(w, 400, "GetAnalytics", errors.New("missing request var"))
 		return
 	}
-	res, err := h.usecase.GetAnalytics(context.Background(), restId, payload.Start, payload.End)
+	res, err := h.usecase.GetAnalytics(context.Background(), restId, start, end)
 	if err != nil {
 		response.WithError(w, 500, "GetAnalytics", err)
 		return
