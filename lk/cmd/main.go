@@ -54,7 +54,7 @@ func main() {
 	}
 
 	minio := repo.NewMinio(minioClient)
-	clickhouse := repo.NewClickHouse(clickClient)
+	clickhouse := repo.NewAnalytics(clickClient)
 
 	menuRepo := repo.NewMenu(db)
 	menuUsecase := usecase.NewMenu(menuRepo, minio)
@@ -67,6 +67,9 @@ func main() {
 	orderRepo := repo.NewOrder(db)
 	orderUsecase := usecase.NewOrder(orderRepo, clickhouse)
 	orderHandler := delivery.NewOrder(orderUsecase)
+
+	analitcsUsecase := usecase.NewAnalytics(clickhouse, menuRepo)
+	analitcsHandler := delivery.NewAnalytics(analitcsUsecase)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CorsMiddleware)
@@ -103,6 +106,8 @@ func main() {
 		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
 		order.HandleFunc("/{id}", orderHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
 	}
+
+	r.HandleFunc("/analytics", analitcsHandler.GetAnalytics).Methods(http.MethodGet, http.MethodOptions)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", os.Getenv("HOST"), cfg.Server.Port),

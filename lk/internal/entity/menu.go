@@ -68,6 +68,7 @@ type Food struct {
 	Img          string
 	Status       FoodStatus
 	CategoryID   uint64
+	CategoryName string
 	RestaurantID uint64
 }
 

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"back/lk/internal/entity"
 	"back/lk/internal/repo"
@@ -15,10 +16,10 @@ type OrderInterface interface {
 
 type Order struct {
 	repo  repo.OrderInterface
-	click repo.ClickHouseInterface
+	click repo.AnalyticsInterface
 }
 
-func NewOrder(r repo.OrderInterface, c repo.ClickHouseInterface) OrderInterface {
+func NewOrder(r repo.OrderInterface, c repo.AnalyticsInterface) OrderInterface {
 	return &Order{
 		repo:  r,
 		click: c,
@@ -59,6 +60,14 @@ func (u *Order) UpdateStatus(ctx context.Context, orderId uint32, status string)
 		if err != nil {
 			return err
 		}
+		for i, f := range order.Food {
+			name, err := u.repo.GetCategoryName(ctx, f.Food.CategoryID)
+			if err != nil {
+				return err
+			}
+			order.Food[i].Food.CategoryName = name
+		}
+		fmt.Println(order.Food)
 		if err = u.click.SetOrder(ctx, order); err != nil {
 			return err
 		}

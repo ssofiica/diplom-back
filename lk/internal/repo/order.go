@@ -16,15 +16,16 @@ type OrderInterface interface {
 	GetOrderById(ctx context.Context, orderId uint32) (entity.Order, error)
 	GetOrderFood(ctx context.Context, id uint32) ([]entity.OrderFood, error)
 	UpdateStatus(ctx context.Context, id uint32, status entity.OrderStatus) error
+	GetCategoryName(ctx context.Context, id uint64) (string, error)
 }
 
 type Order struct {
-	db    *pgxpool.Pool
+	db *pgxpool.Pool
 }
 
 func NewOrder(db *pgxpool.Pool) OrderInterface {
 	return &Order{
-		db:    db,
+		db: db,
 	}
 }
 
@@ -111,7 +112,7 @@ func (r *Order) GetOrderFood(ctx context.Context, id uint32) ([]entity.OrderFood
 	if err != nil {
 		return []entity.OrderFood{}, err
 	}
-	query1 := `select id, name, price, weight, img_url from food where id=$1`
+	query1 := `select id, name, price, weight, img_url, category_id from food where id=$1`
 	for rows.Next() {
 		tmp := entity.OrderFood{}
 		var id uint32
@@ -125,6 +126,7 @@ func (r *Order) GetOrderFood(ctx context.Context, id uint32) ([]entity.OrderFood
 			&tmp.Food.Price,
 			&tmp.Food.Weight,
 			&tmp.Food.Img,
+			&tmp.Food.CategoryID,
 		)
 		if err != nil {
 			return []entity.OrderFood{}, err
@@ -153,4 +155,14 @@ func (r *Order) UpdateStatus(ctx context.Context, id uint32, status entity.Order
 		return err
 	}
 	return nil
+}
+
+func (r *Order) GetCategoryName(ctx context.Context, id uint64) (string, error) {
+	query := `select name from category where id=$1`
+	var res string
+	err := r.db.QueryRow(ctx, query, id).Scan(&res)
+	if err != nil {
+		return "", nil
+	}
+	return res, nil
 }
