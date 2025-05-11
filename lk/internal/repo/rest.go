@@ -103,8 +103,17 @@ func (r *Rest) UploadBaseInfo(ctx context.Context, info entity.BaseInfo, id uint
 }
 
 func (r *Rest) UpdateDescrip(ctx context.Context, str string, index uint8, id uint64) error {
-	query := `update restaurant set description_array[$1]=$2 where id=$3`
-	_, err := r.db.Exec(ctx, query, index, str, id)
+	var err error
+	if str == "" {
+		query := `UPDATE restaurant 
+		SET description_array = 
+			description_array[1:$1-1] || description_array[$1+1:array_length(description_array, 1)]
+		WHERE id = $2`
+		_, err = r.db.Exec(ctx, query, index, id)
+	} else {
+		query := `update restaurant set description_array[$1]=$2 where id=$3`
+		_, err = r.db.Exec(ctx, query, index, str, id)
+	}
 	if err != nil {
 		return err
 	}
@@ -112,8 +121,16 @@ func (r *Rest) UpdateDescrip(ctx context.Context, str string, index uint8, id ui
 }
 
 func (r *Rest) PutImgUrl(ctx context.Context, url string, index uint8, id uint64) error {
-	query := `update restaurant set img_urls[$1]=$2 where id=$3`
-	_, err := r.db.Exec(ctx, query, index, url, id)
+	var err error
+	if url == "" {
+		query := `UPDATE restaurant 
+		SET img_urls = img_urls[1:$1-1] || img_urls[$1+1:array_length(img_urls, 1)]
+		WHERE id = $2`
+		_, err = r.db.Exec(ctx, query, index, id)
+	} else {
+		query := `update restaurant set img_urls[$1]=$2 where id=$3`
+		_, err = r.db.Exec(ctx, query, index, url, id)
+	}
 	if err != nil {
 		return err
 	}

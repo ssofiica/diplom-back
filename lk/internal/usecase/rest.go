@@ -68,12 +68,16 @@ func (u *Rest) UploadDescriptionAndImages(ctx context.Context, info *entity.Desc
 		}
 	}
 	for _, img := range info.Img {
-		path := fmt.Sprintf("%s/%d/%d%s", ImageTypeRestaurant, restId, img.Index, img.Ext)
-		_, err := u.minio.UploadImage(ctx, img.Data, path, img.MimeType)
-		if err != nil {
-			return err
+		path := ""
+		fmt.Println(len(img.Data))
+		if len(img.Data) != 0 {
+			path = fmt.Sprintf("%s/%d/%d%s", ImageTypeRestaurant, restId, img.Index, img.Ext)
+			_, err := u.minio.UploadImage(ctx, img.Data, path, img.MimeType)
+			if err != nil {
+				return err
+			}
 		}
-		err = u.repo.PutImgUrl(ctx, path, img.Index, restId)
+		err := u.repo.PutImgUrl(ctx, path, img.Index, restId)
 		if err != nil {
 			return err
 		}

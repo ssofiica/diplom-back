@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -73,16 +74,23 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 
 	files := r.MultipartForm.File["images"]
 	var imgIndexArray []uint8
-	if files != nil {
-		if imgIndexes := r.FormValue("img_indexes"); imgIndexes != "" {
-			if err = json.Unmarshal([]byte(imgIndexes), &imgIndexArray); err != nil {
-				response.WithError(w, 400, "UploadDescriptionsAndImages", err)
-				return
-			}
+	if imgIndexes := r.FormValue("img_indexes"); imgIndexes != "" {
+		if err = json.Unmarshal([]byte(imgIndexes), &imgIndexArray); err != nil {
+			response.WithError(w, 400, "UploadDescriptionsAndImages", err)
+			return
 		}
-		if len(files) != len(imgIndexArray) {
+	}
+	if files != nil {
+		if len(files) > len(imgIndexArray) {
 			response.WithError(w, 400, "UploadDescriptionsAndImages", errors.New("Нужны индексы картинок"))
 			return
+		}
+	} else {
+		for _, index := range imgIndexArray {
+			data := entity.Img{
+				Index: index,
+			}
+			content.Img = append(content.Img, data)
 		}
 	}
 	var img entity.Img
@@ -111,6 +119,7 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 		img.MimeType = mime
 		content.Img = append(content.Img, img)
 	}
+	fmt.Println(content)
 	err = h.usecase.UploadDescriptionAndImages(context.Background(), &content, restId)
 	if err != nil {
 		response.WithError(w, 500, "UploadDescriptionsAndImages", err)
