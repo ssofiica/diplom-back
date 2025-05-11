@@ -1,7 +1,5 @@
 package entity
 
-import "time"
-
 //    Графики
 // Выручка	SUM(sum)	Общая/дневная/по ресторану
 // Средний чек	SUM(sum)/COUNT(order_id)	Тренды по дням/ресторанам
@@ -15,19 +13,22 @@ import "time"
 // onlyDate := currentTime.Format("02-01-2006")
 
 type LinnerChart struct {
-	Title string
-	X     string
-	Y     string
-	XArr  any
-	YArr  any
+	Title string  `json:"title"`
+	X     string  `json:"x"`
+	Y     string  `json:"y"`
+	Data  []Point `json:"data"`
+}
+
+type Point struct {
+	X any
+	Y any
 }
 
 type LinnerChartRepo struct {
-	Date        []string
-	Revenue     []int
-	AvgCheck    []float64
-	Conversion  []float64
-	AvgPrepTime []time.Duration
+	Revenue     []Point
+	AvgCheck    []Point
+	Conversion  []Point
+	AvgPrepTime []Point
 }
 
 type Analytics struct {

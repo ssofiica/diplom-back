@@ -49,11 +49,7 @@ func (r *Analytics) GetLinnerCharts(ctx context.Context, restId uint64, start, e
     `
 
 	var (
-		date        []string
-		revenue     []int
-		avgCheck    []float64
-		conversion  []float64
-		avgPrepTime []time.Duration
+		revenue, avgCheck, conversion, avgPrepTime []entity.Point
 		d           time.Time
 		rev         int
 		aC          float64
@@ -69,14 +65,13 @@ func (r *Analytics) GetLinnerCharts(ctx context.Context, restId uint64, start, e
 		if err := rows.Scan(&d, &rev, &aC, &c, &aPT); err != nil {
 			return entity.LinnerChartRepo{}, err
 		}
-		date = append(date, d.Format("02-01-2006"))
-		revenue = append(revenue, rev)
-		avgCheck = append(avgCheck, aC)
-		conversion = append(conversion, c)
-		avgPrepTime = append(avgPrepTime, aPT)
+		date := d.Format("02-01-2006")
+		revenue = append(revenue, entity.Point{X: date, Y: rev})
+		avgCheck = append(avgCheck, entity.Point{X: date, Y: aC})
+		conversion = append(conversion, entity.Point{X: date, Y: c})
+		avgPrepTime = append(avgPrepTime, entity.Point{X: date, Y: aPT})
 	}
 	return entity.LinnerChartRepo{
-		Date:        date,
 		Revenue:     revenue,
 		AvgCheck:    avgCheck,
 		Conversion:  conversion,

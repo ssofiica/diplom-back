@@ -30,29 +30,25 @@ func (u *Analytics) GetAnalytics(ctx context.Context, restId uint64, start, end 
 			Title: "Дневная выручка",
 			X:     "Выручка",
 			Y:     "руб",
-			XArr:  linner.Date,
-			YArr:  linner.Revenue,
+			Data:  linner.Revenue,
 		},
 		AvgCheck: entity.LinnerChart{
 			Title: "Средний чек",
 			X:     "Чек",
 			Y:     "руб.",
-			XArr:  linner.Date,
-			YArr:  linner.AvgCheck,
+			Data:  linner.AvgCheck,
 		},
 		Conversion: entity.LinnerChart{
 			Title: "Процент завершенных заказов",
 			X:     "Процент",
 			Y:     "%",
-			XArr:  linner.Date,
-			YArr:  linner.Conversion,
+			Data:  linner.Conversion,
 		},
 		AvgPrepTime: entity.LinnerChart{
 			Title: "Время приготовления",
 			X:     "Время",
 			Y:     "мин.",
-			XArr:  linner.Date,
-			YArr:  linner.AvgPrepTime,
+			Data:  linner.AvgPrepTime,
 		},
 	}
 	food, err := u.click.GetTopFood(ctx, restId, start, end)
