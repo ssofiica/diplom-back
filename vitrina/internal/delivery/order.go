@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var userKey string = "user"
+
 type OrderHandler struct {
 	usecase usecase.OrderInterface
 }
@@ -25,7 +27,12 @@ func NewOrderHandler(u usecase.OrderInterface) *OrderHandler {
 
 func (h *OrderHandler) ChangeFoodCountInBasket(w http.ResponseWriter, r *http.Request) {
 	restId := uint32(1)
-	userId := uint32(1)
+	//userId := uint32(1)
+	user, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCurrent", ErrDefault401)
+		return
+	}
 	payload := entity.RequestAddFood{}
 	if err := request.GetRequestData(r, &payload); err != nil {
 		response.WithError(w, 400, "AddFood", err)
@@ -35,7 +42,7 @@ func (h *OrderHandler) ChangeFoodCountInBasket(w http.ResponseWriter, r *http.Re
 		response.WithError(w, 400, "AddFood", ErrNotValidBody)
 		return
 	}
-	err := h.usecase.AddFoodToOrder(context.Background(), userId, restId, payload)
+	err := h.usecase.AddFoodToOrder(context.Background(), user.ID, restId, payload)
 	if err != nil {
 		if errors.Is(usecase.ErrFoodStoped, err) {
 			response.WithError(w, 409, "AddFood", err)
@@ -44,7 +51,7 @@ func (h *OrderHandler) ChangeFoodCountInBasket(w http.ResponseWriter, r *http.Re
 		response.WithError(w, 500, "AddFood", err)
 		return
 	}
-	basket, err := h.usecase.GetBasket(context.Background(), userId, 0)
+	basket, err := h.usecase.GetBasket(context.Background(), user.ID, 0)
 	if err != nil {
 		if errors.Is(usecase.ErrFoodStoped, err) {
 			response.WithError(w, 409, "AddFood", err)
@@ -144,8 +151,13 @@ func (h *OrderHandler) Pay(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 	//restId := uint32(1)
-	userId := uint32(1)
-	res, err := h.usecase.Current(context.Background(), userId)
+	user, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCurrent", ErrDefault401)
+		return
+	}
+	// userId := uint32(1)
+	res, err := h.usecase.Current(context.Background(), user.ID)
 	if err != nil {
 		response.WithError(w, 500, "GetCurrent", err)
 		return

@@ -4,6 +4,7 @@ import (
 	"back/infra/postgres"
 	"back/vitrina/config"
 	"back/vitrina/internal/delivery"
+	"back/vitrina/internal/entity"
 	"back/vitrina/internal/middleware"
 	"back/vitrina/internal/repo"
 	"back/vitrina/internal/usecase"
@@ -27,8 +28,18 @@ func init() {
 
 func main() {
 	cfg := config.Load()
+
+	token, err := entity.NewJWT(os.Getenv("JWT_SECRET"), os.Getenv("JWT_DURATION"))
+	if err != nil {
+		log.Fatal("jwt troubles")
+	}
+
 	db := postgres.Init(os.Getenv("PG_CONN"))
 	defer db.Close()
+
+	userRepo := repo.NewUser(db)
+	userUsecase := usecase.NewUser(userRepo)
+	authHandler := delivery.NewAuthHandler(userUsecase, token)
 
 	infoRepo := repo.NewRest(db)
 	infoUsecase := usecase.NewRest(infoRepo)
@@ -47,15 +58,18 @@ func main() {
 	})
 	r.Use(middleware.CorsMiddleware)
 
+	r.HandleFunc("/signin", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/signup", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
+
 	r.HandleFunc("/info", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/menu", infoHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)
 	order := r.PathPrefix("/order").Subrouter()
 	{
-		order.HandleFunc("/food", orderHandler.ChangeFoodCountInBasket).Methods(http.MethodPost, http.MethodOptions)
+		order.HandleFunc("/food", middleware.JWTMiddleware(orderHandler.ChangeFoodCountInBasket)).Methods(http.MethodPost, http.MethodOptions)
 		order.HandleFunc("/basket", orderHandler.GetUserBasket).Methods(http.MethodGet, http.MethodOptions)
 		order.HandleFunc("/info", orderHandler.UpdateBasketInfo).Methods(http.MethodPost, http.MethodOptions)
 		order.HandleFunc("/pay", orderHandler.Pay).Methods(http.MethodPost, http.MethodOptions)
-		order.HandleFunc("/current", orderHandler.GetCurrent).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/current", middleware.JWTMiddleware(orderHandler.GetCurrent)).Methods(http.MethodGet, http.MethodOptions)
 		order.HandleFunc("/archive", orderHandler.GetArchive).Methods(http.MethodGet, http.MethodOptions)
 		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
 	}

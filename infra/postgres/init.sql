@@ -46,11 +46,11 @@ CREATE TABLE IF NOT EXISTS food (
         CONSTRAINT food_status_length CHECK (LENGTH(status) <= 20) NOT NULL
 );
 
---TODO: доделать
 CREATE TABLE IF NOT EXISTS "user" (
     id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email TEXT NOT NULL,
     name TEXT,
-    phone TEXT NOT NULL,
+    phone TEXT,
     password TEXT
 );
 
