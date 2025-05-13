@@ -65,8 +65,12 @@ func (h *OrderHandler) ChangeFoodCountInBasket(w http.ResponseWriter, r *http.Re
 
 func (h *OrderHandler) GetUserBasket(w http.ResponseWriter, r *http.Request) {
 	//restId := uint32(1)
-	userId := uint32(1)
-	res, err := h.usecase.GetBasket(context.Background(), userId, 0)
+	user, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCurrent", ErrDefault401)
+		return
+	}
+	res, err := h.usecase.GetBasket(context.Background(), user.ID, 0)
 	if err != nil {
 		if errors.Is(usecase.ErrFoodStoped, err) {
 			response.WithError(w, 409, "GetBasket", err)
@@ -107,7 +111,12 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandler) UpdateBasketInfo(w http.ResponseWriter, r *http.Request) {
 	//restId := uint32(1)
-	userId := uint32(1)
+	//userId := uint32(1)
+	user, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCurrent", ErrDefault401)
+		return
+	}
 	payload := entity.RequestBasketInfo{}
 	if err := request.GetRequestData(r, &payload); err != nil {
 		response.WithError(w, 400, "UpdateBasketInfo", err)
@@ -117,7 +126,7 @@ func (h *OrderHandler) UpdateBasketInfo(w http.ResponseWriter, r *http.Request) 
 		response.WithError(w, 400, "UpdateBasketInfo", ErrNotValidBody)
 		return
 	}
-	res, err := h.usecase.UpdateBasketInfo(context.Background(), userId, payload)
+	res, err := h.usecase.UpdateBasketInfo(context.Background(), user.ID, payload)
 	if err != nil {
 		response.WithError(w, 500, "UpdateBasketInfo", err)
 		return
@@ -131,8 +140,12 @@ func (h *OrderHandler) UpdateBasketInfo(w http.ResponseWriter, r *http.Request) 
 
 func (h *OrderHandler) Pay(w http.ResponseWriter, r *http.Request) {
 	//restId := uint32(1)
-	userId := uint32(1)
-	id, err := h.usecase.Pay(context.Background(), userId)
+	user, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCurrent", ErrDefault401)
+		return
+	}
+	id, err := h.usecase.Pay(context.Background(), user.ID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNeedAddress) {
 			response.WriteData(w, err.Error(), 200)
@@ -167,8 +180,13 @@ func (h *OrderHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandler) GetArchive(w http.ResponseWriter, r *http.Request) {
 	//restId := uint32(1)
-	userId := uint32(1)
-	res, err := h.usecase.Archive(context.Background(), userId)
+	//userId := uint32(1)
+	user, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCurrent", ErrDefault401)
+		return
+	}
+	res, err := h.usecase.Archive(context.Background(), user.ID)
 	if err != nil {
 		response.WithError(w, 500, "GetCurrent", err)
 		return

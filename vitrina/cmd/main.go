@@ -66,11 +66,11 @@ func main() {
 	order := r.PathPrefix("/order").Subrouter()
 	{
 		order.HandleFunc("/food", middleware.JWTMiddleware(orderHandler.ChangeFoodCountInBasket)).Methods(http.MethodPost, http.MethodOptions)
-		order.HandleFunc("/basket", orderHandler.GetUserBasket).Methods(http.MethodGet, http.MethodOptions)
-		order.HandleFunc("/info", orderHandler.UpdateBasketInfo).Methods(http.MethodPost, http.MethodOptions)
-		order.HandleFunc("/pay", orderHandler.Pay).Methods(http.MethodPost, http.MethodOptions)
+		order.HandleFunc("/basket", middleware.JWTMiddleware(orderHandler.GetUserBasket)).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/info", middleware.JWTMiddleware(orderHandler.UpdateBasketInfo)).Methods(http.MethodPost, http.MethodOptions)
+		order.HandleFunc("/pay", middleware.JWTMiddleware(orderHandler.Pay)).Methods(http.MethodPost, http.MethodOptions)
 		order.HandleFunc("/current", middleware.JWTMiddleware(orderHandler.GetCurrent)).Methods(http.MethodGet, http.MethodOptions)
-		order.HandleFunc("/archive", orderHandler.GetArchive).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/archive", middleware.JWTMiddleware(orderHandler.GetArchive)).Methods(http.MethodGet, http.MethodOptions)
 		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
 	}
 
