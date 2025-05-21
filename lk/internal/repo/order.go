@@ -94,13 +94,15 @@ func (r *Order) GetOrderById(ctx context.Context, orderId uint32) (entity.Order,
 
 	query = `select id, name, phone from "user" where id=$1`
 	user := entity.OrderUser{}
-	err = r.db.QueryRow(ctx, query, userID).Scan(&user.Id, &user.Name, &user.Phone)
+	var phone pgtype.Text
+	err = r.db.QueryRow(ctx, query, userID).Scan(&user.Id, &user.Name, &phone)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.Order{Id: 0}, nil
 		}
 		return entity.Order{}, err
 	}
+	user.Phone = phone.String
 	res.User = user
 	return res, nil
 }

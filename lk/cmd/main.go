@@ -6,6 +6,7 @@ import (
 	"back/infra/postgres"
 	"back/lk/config"
 	"back/lk/internal/delivery"
+	"back/lk/internal/entity"
 	"back/lk/internal/middleware"
 	"back/lk/internal/repo"
 	"back/lk/internal/usecase"
@@ -29,6 +30,12 @@ func init() {
 
 func main() {
 	cfg := config.Load()
+
+	token, err := entity.NewJWT(os.Getenv("JWT_SECRET"), os.Getenv("JWT_DURATION"))
+	if err != nil {
+		log.Fatal("jwt troubles")
+	}
+
 	db := postgres.Init(os.Getenv("PG_CONN"))
 	defer db.Close()
 
@@ -71,6 +78,10 @@ func main() {
 	analitcsUsecase := usecase.NewAnalytics(clickhouse, menuRepo)
 	analitcsHandler := delivery.NewAnalytics(analitcsUsecase)
 
+	authRepo := repo.NewUser(db)
+	authUsecase := usecase.NewUser(authRepo)
+	authHandler := delivery.NewAuthHandler(authUsecase, token)
+
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CorsMiddleware)
 
@@ -78,36 +89,40 @@ func main() {
 		fmt.Println("query to path: " + r.URL.String())
 		w.WriteHeader(http.StatusNotFound)
 	})
+
+	r.HandleFunc("/signin", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/signup", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
+
 	menu := r.PathPrefix("/menu").Subrouter()
 	{
-		menu.HandleFunc("", menuHandler.GetMenu).Methods(http.MethodGet, http.MethodOptions)
-		menu.HandleFunc("/category-list", menuHandler.GetCategoryList).Methods(http.MethodGet, http.MethodOptions)
-		menu.HandleFunc("/{category_id}", menuHandler.GetFoodByStatus).Methods(http.MethodGet, http.MethodOptions)
-		menu.HandleFunc("/food/add", menuHandler.AddFood).Methods(http.MethodPost, http.MethodOptions)
-		menu.HandleFunc("/food/{id}", menuHandler.DeleteFood).Methods(http.MethodDelete, http.MethodOptions)
-		menu.HandleFunc("/food/{id}/change", menuHandler.EditFood).Methods(http.MethodPut, http.MethodOptions)
-		menu.HandleFunc("/food/{id}/status", menuHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
+		menu.HandleFunc("", middleware.JWTMiddleware(menuHandler.GetMenu)).Methods(http.MethodGet, http.MethodOptions)
+		menu.HandleFunc("/category-list", middleware.JWTMiddleware(menuHandler.GetCategoryList)).Methods(http.MethodGet, http.MethodOptions)
+		menu.HandleFunc("/{category_id}", middleware.JWTMiddleware(menuHandler.GetFoodByStatus)).Methods(http.MethodGet, http.MethodOptions)
+		menu.HandleFunc("/food/add", middleware.JWTMiddleware(menuHandler.AddFood)).Methods(http.MethodPost, http.MethodOptions)
+		menu.HandleFunc("/food/{id}", middleware.JWTMiddleware(menuHandler.DeleteFood)).Methods(http.MethodDelete, http.MethodOptions)
+		menu.HandleFunc("/food/{id}/change", middleware.JWTMiddleware(menuHandler.EditFood)).Methods(http.MethodPut, http.MethodOptions)
+		menu.HandleFunc("/food/{id}/status", middleware.JWTMiddleware(menuHandler.ChangeStatus)).Methods(http.MethodPut, http.MethodOptions)
 		menu.HandleFunc("/food/{id}/img", menuHandler.UploadFoodImage).Methods(http.MethodPut, http.MethodOptions)
-		menu.HandleFunc("/category/add", menuHandler.AddCategory).Methods(http.MethodPost, http.MethodOptions)
+		menu.HandleFunc("/category/add", middleware.JWTMiddleware(menuHandler.AddCategory)).Methods(http.MethodPost, http.MethodOptions)
 		menu.HandleFunc("/category/{id}", menuHandler.DeleteCategory).Methods(http.MethodDelete, http.MethodOptions)
 	}
 
 	info := r.PathPrefix("/info").Subrouter()
 	{
-		info.HandleFunc("", infoHandler.GetInfo).Methods(http.MethodGet, http.MethodOptions)
-		info.HandleFunc("/base", infoHandler.UploadBaseInfo).Methods(http.MethodPost, http.MethodOptions)
-		info.HandleFunc("/upload-logo", infoHandler.UploadImage).Methods(http.MethodPost, http.MethodOptions)
-		info.HandleFunc("/site-content", infoHandler.UploadDescriptionsAndImages).Methods(http.MethodPost, http.MethodOptions)
+		info.HandleFunc("", middleware.JWTMiddleware(infoHandler.GetInfo)).Methods(http.MethodGet, http.MethodOptions)
+		info.HandleFunc("/base", middleware.JWTMiddleware(infoHandler.UploadBaseInfo)).Methods(http.MethodPost, http.MethodOptions)
+		info.HandleFunc("/upload-logo", middleware.JWTMiddleware(infoHandler.UploadImage)).Methods(http.MethodPost, http.MethodOptions)
+		info.HandleFunc("/site-content", middleware.JWTMiddleware(infoHandler.UploadDescriptionsAndImages)).Methods(http.MethodPost, http.MethodOptions)
 	}
 
 	order := r.PathPrefix("/order").Subrouter()
 	{
-		order.HandleFunc("/mini-list", orderHandler.GetMiniOrders).Methods(http.MethodGet, http.MethodOptions)
-		order.HandleFunc("/{id}", orderHandler.GetOrderById).Methods(http.MethodGet, http.MethodOptions)
-		order.HandleFunc("/{id}", orderHandler.ChangeStatus).Methods(http.MethodPut, http.MethodOptions)
+		order.HandleFunc("/mini-list", middleware.JWTMiddleware(orderHandler.GetMiniOrders)).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/{id}", middleware.JWTMiddleware(orderHandler.GetOrderById)).Methods(http.MethodGet, http.MethodOptions)
+		order.HandleFunc("/{id}", middleware.JWTMiddleware(orderHandler.ChangeStatus)).Methods(http.MethodPut, http.MethodOptions)
 	}
 
-	r.HandleFunc("/analytics", analitcsHandler.GetAnalytics).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/analytics", middleware.JWTMiddleware(analitcsHandler.GetAnalytics)).Methods(http.MethodGet, http.MethodOptions)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", os.Getenv("HOST"), cfg.Server.Port),

@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS restaurant (
     img_urls TEXT[] DEFAULT ARRAY[]::TEXT[],
     phone TEXT DEFAULT '',
     email TEXT NOT NULL,
-    media_links JSONB
+    media_links JSONB,
+    password TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS schedule (

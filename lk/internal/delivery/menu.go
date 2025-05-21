@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var restId = uint64(1)
+var restId = uint64(3)
 
 type MenuHandler struct {
 	usecase usecase.MenuInterface
@@ -40,7 +40,12 @@ func (h *MenuHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) GetCategoryList(w http.ResponseWriter, r *http.Request) {
-	res, err := h.usecase.GetCategoryList(context.Background(), restId)
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
+	res, err := h.usecase.GetCategoryList(context.Background(), rest.ID)
 	if err != nil {
 		response.WithError(w, 500, "GetCategoryList", err)
 		return
@@ -82,13 +87,18 @@ func (h *MenuHandler) GetFoodByStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) AddFood(w http.ResponseWriter, r *http.Request) {
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
 	payload := entity.FoodDTO{}
 	if err := request.GetRequestData(r, &payload); err != nil {
 		response.WithError(w, 400, "AddFood", err)
 		return
 	}
 	food := payload.ToFood()
-	food.RestaurantID = restId
+	food.RestaurantID = rest.ID
 	res, err := h.usecase.AddFood(context.Background(), food)
 	if err != nil {
 		response.WithError(w, 500, "AddFood", err)
@@ -98,11 +108,17 @@ func (h *MenuHandler) AddFood(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
 	payload := entity.CategoryDTO{}
 	if err := request.GetRequestData(r, &payload); err != nil {
 		response.WithError(w, 400, "AddCategory", err)
 		return
 	}
+	payload.RestaurantID = rest.ID
 	res, err := h.usecase.AddCategory(context.Background(), payload.ToCategory())
 	if err != nil {
 		response.WithError(w, 500, "AddCategory", err)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"back/lk/internal/entity"
 	"back/lk/internal/usecase"
 	"back/lk/internal/utils/response"
 
@@ -22,14 +23,18 @@ func NewOrder(u usecase.OrderInterface) *OrderHandler {
 }
 
 func (h *OrderHandler) GetMiniOrders(w http.ResponseWriter, r *http.Request) {
-	restId := uint32(1)
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
 	params := r.URL.Query()
 	value := params.Get("status")
 	if value == "" {
 		response.WithError(w, 400, "GetOrdersNew", errors.New("missing request var"))
 		return
 	}
-	res, err := h.usecase.GetMiniOrders(context.Background(), restId, value)
+	res, err := h.usecase.GetMiniOrders(context.Background(), uint32(rest.ID), value)
 	if err != nil {
 		response.WithError(w, 500, "GetOrdersNew", err)
 		return

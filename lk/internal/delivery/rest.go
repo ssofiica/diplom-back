@@ -23,8 +23,12 @@ func NewRestHandler(u usecase.RestInterface) *RestHandler {
 }
 
 func (h *RestHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
-	res, err := h.usecase.GetInfo(context.Background(), restId)
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
+	res, err := h.usecase.GetInfo(context.Background(), rest.ID)
 	if err != nil {
 		response.WithError(w, 500, "GetInfo", err)
 		return
@@ -33,13 +37,17 @@ func (h *RestHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestHandler) UploadBaseInfo(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
 	payload := entity.BaseInfoRequest{}
 	if err := request.GetRequestData(r, &payload); err != nil {
 		response.WithError(w, 400, "UploadBaseInfo", err)
 		return
 	}
-	res, err := h.usecase.UploadBaseInfo(context.Background(), payload.FromDTO(), restId)
+	res, err := h.usecase.UploadBaseInfo(context.Background(), payload.FromDTO(), rest.ID)
 	if err != nil {
 		response.WithError(w, 500, "UploadBaseInfo", err)
 		return
@@ -48,6 +56,11 @@ func (h *RestHandler) UploadBaseInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http.Request) {
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
 		response.WithError(w, 400, "UploadDescriptionsAndImages", err)
@@ -120,7 +133,7 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 		content.Img = append(content.Img, img)
 	}
 	fmt.Println(content)
-	err = h.usecase.UploadDescriptionAndImages(context.Background(), &content, restId)
+	err = h.usecase.UploadDescriptionAndImages(context.Background(), &content, rest.ID)
 	if err != nil {
 		response.WithError(w, 500, "UploadDescriptionsAndImages", err)
 		return
@@ -129,6 +142,11 @@ func (h *RestHandler) UploadDescriptionsAndImages(w http.ResponseWriter, r *http
 }
 
 func (h *RestHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
+	rest, ok := r.Context().Value(userKey).(entity.User)
+	if !ok {
+		response.WithError(w, 401, "GetCategoryList", ErrDefault401)
+		return
+	}
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
 		response.WithError(w, 400, "UploadImage", err)
@@ -153,7 +171,7 @@ func (h *RestHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 		response.WithError(w, 400, "UploadImage", err)
 		return
 	}
-	err = h.usecase.UploadLogo(context.Background(), fileBytes, fileExtension, mimeType, uint64(restId))
+	err = h.usecase.UploadLogo(context.Background(), fileBytes, fileExtension, mimeType, uint64(rest.ID))
 	if err != nil {
 		response.WithError(w, 500, "UploadImage", err)
 		return
