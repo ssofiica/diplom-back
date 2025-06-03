@@ -17,8 +17,9 @@ func NewRestHandler(u usecase.RestInterface) *RestHandler {
 	return &RestHandler{usecase: u}
 }
 
+var restId = uint64(1)
+
 func (h *RestHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
 	res, err := h.usecase.GetInfo(context.Background(), restId)
 	if err != nil {
 		response.WithError(w, 500, "GetInfo", err)
@@ -28,7 +29,6 @@ func (h *RestHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
-	restId := uint64(1)
 	res, err := h.usecase.GetMenu(context.Background(), restId)
 	if err != nil {
 		response.WithError(w, 500, "GetMenu", err)

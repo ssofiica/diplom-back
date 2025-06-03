@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var restId = uint64(3)
+var restId = uint64(1)
 
 type MenuHandler struct {
 	usecase usecase.MenuInterface

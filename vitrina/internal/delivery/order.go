@@ -26,7 +26,6 @@ func NewOrderHandler(u usecase.OrderInterface) *OrderHandler {
 }
 
 func (h *OrderHandler) ChangeFoodCountInBasket(w http.ResponseWriter, r *http.Request) {
-	restId := uint32(1)
 	//userId := uint32(1)
 	user, ok := r.Context().Value(userKey).(entity.User)
 	if !ok {
@@ -42,7 +41,7 @@ func (h *OrderHandler) ChangeFoodCountInBasket(w http.ResponseWriter, r *http.Re
 		response.WithError(w, 400, "AddFood", ErrNotValidBody)
 		return
 	}
-	err := h.usecase.AddFoodToOrder(context.Background(), user.ID, restId, payload)
+	err := h.usecase.AddFoodToOrder(context.Background(), user.ID, uint32(restId), payload)
 	if err != nil {
 		if errors.Is(usecase.ErrFoodStoped, err) {
 			response.WithError(w, 409, "AddFood", err)
